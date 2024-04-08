@@ -138,7 +138,8 @@ export interface CapacitorCalendarPlugin {
    * @param {string} [options.location] - The location of the event. (Optional)
    * @param {number} [options.startDate] - The start date and time of the event. (Optional)
    * @param {number} [options.endDate] - The end date and time of the event. (Optional)
-   * @param {boolean} [options.isAllDay] - Weather the event is for the entire day or not. (Optional)
+   * @param {boolean} [options.isAllDay] - Whether the event is for the entire day or not. (Optional)
+   * @param {number} [options.alertMinutes] - If a number >= 0 is provided, an alert will be set for the event this many minutes *before* the event. Negative values are ignored. (Optional)
    * @returns {Promise<{ eventCreated: boolean }>} A Promise that resolves with an object indicating whether the event was created successfully.
    * The resolved object has a property 'eventCreated' which is a boolean value representing whether the event was created.
    * @example
@@ -149,6 +150,7 @@ export interface CapacitorCalendarPlugin {
    *   startDate: now,
    *   endDate: now + 2 * 60 * 60 * 1000,
    *   isAllDay: false
+   *   alertMinutes: 30
    * };
    * const { eventCreated } = await createEvent(eventOptions);
    * console.log(eventCreated); // true
@@ -160,6 +162,7 @@ export interface CapacitorCalendarPlugin {
     startDate?: number;
     endDate?: number;
     isAllDay?: boolean;
+    alertMinutes?: number;
   }): Promise<{ eventCreated: boolean }>;
 
   /**

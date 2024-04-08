@@ -100,14 +100,22 @@ export class MethodsListComponent {
       .catch((error) => this.storeService.dispatchLog(JSON.stringify(error)));
   }
 
-  public createEvent(): void {
-    const now = Date.now();
+  public createEvent(alertMinutes?: number): void {
+    let start = Date.now();
+
+    // If there is an alert offset, set the start date/time
+    // so that the alert will trigger in 1 minute.
+    if (typeof alertMinutes === 'number') {
+      start += alertMinutes * 60 * 1000 + 60 * 1000;
+    }
+
     CapacitorCalendar.createEvent({
       title: 'Capacitor Calendar',
-      startDate: now,
-      endDate: now + 2 * 60 * 60 * 1000,
+      startDate: start,
+      endDate: start + 2 * 60 * 60 * 1000,
       location: 'Capacitor Calendar',
       isAllDay: false,
+      alertMinutes,
     })
       .then((response) => this.storeService.dispatchLog(JSON.stringify(response)))
       .catch((error) => this.storeService.dispatchLog(JSON.stringify(error)));

@@ -178,6 +178,7 @@ public class CapacitorCalendarPlugin: CAPPlugin {
         let startDate = call.getDouble("startDate")
         let endDate = call.getDouble("endDate")
         let isAllDay = call.getBool("isAllDay")
+        let alertMinutes = call.getInt("alertMinutes")
         let calendarId = call.getString("calendarId")
 
         let eventParameters = EventCreationParameters(
@@ -186,7 +187,8 @@ public class CapacitorCalendarPlugin: CAPPlugin {
             location: location,
             startDate: startDate,
             endDate: endDate,
-            isAllDay: isAllDay
+            isAllDay: isAllDay,
+            alertMinutes: alertMinutes
         )
 
         do {

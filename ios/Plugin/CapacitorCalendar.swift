@@ -103,6 +103,10 @@ public class CapacitorCalendar: NSObject, EKEventEditViewDelegate, EKCalendarCho
         if let isAllDay = parameters.isAllDay {
             newEvent.isAllDay = isAllDay
         }
+        if let alertMinutes = parameters.alertMinutes,
+           alertMinutes >= 0 {
+            newEvent.addAlarm(EKAlarm(relativeOffset: TimeInterval(-alertMinutes * 60)))
+        }
 
         do {
             try eventStore.save(newEvent, span: .thisEvent)

@@ -181,8 +181,9 @@ class CapacitorCalendarPlugin : Plugin() {
             val startDate = call.getLong("startDate")
             val endDate = call.getLong("endDate")
             val isAllDay = call.getBoolean("isAllDay", false)
+            val alertOffset = call.getInt("alertOffset")
 
-            val eventUri = implementation.createEvent(context, title, calendarId, location, startDate, endDate, isAllDay)
+            val eventUri = implementation.createEvent(context, title, calendarId, location, startDate, endDate, isAllDay, alertOffset)
             val ret = JSObject()
             ret.put("eventCreated", eventUri != null)
             call.resolve(ret)
