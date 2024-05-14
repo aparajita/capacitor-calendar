@@ -2,6 +2,7 @@
 import { PermissionState, WebPlugin } from '@capacitor/core';
 import { CapacitorCalendarPlugin } from './definitions';
 import { PluginPermission } from './schemas/enums/plugin-permission';
+import type { Access } from './schemas/interfaces/access';
 import { ReminderRecurrenceRule } from './schemas/interfaces/reminder-recurrence-rule';
 import type { Calendar } from './schemas/interfaces/calendar';
 import type { RemindersList } from './schemas/interfaces/reminders-list';
@@ -17,8 +18,24 @@ export class CapacitorCalendarWeb extends WebPlugin implements CapacitorCalendar
     throw this.unimplemented(`${this.checkAllPermissions.name} is not implemented on the web`);
   }
 
-  public requestPermission(_options: { alias: PluginPermission }): Promise<{ result: PermissionState }> {
+  public requestPermission(_options: { alias: PluginPermission }): Promise<{ result: Access }> {
     throw this.unimplemented(`${this.requestPermission.name} is not implemented on the web`);
+  }
+
+  public requestReadOnlyCalendarAccess(): Promise<{ result: Access }> {
+    throw this.unimplemented(`${this.requestReadOnlyCalendarAccess.name} is not implemented on the web`);
+  }
+
+  public requestWriteOnlyCalendarAccess(): Promise<{ result: Access }> {
+    throw this.unimplemented(`${this.requestWriteOnlyCalendarAccess.name} is not implemented on the web`);
+  }
+
+  public requestFullCalendarAccess(): Promise<{ result: Access }> {
+    throw this.unimplemented(`${this.requestFullCalendarAccess.name} is not implemented on the web`);
+  }
+
+  public requestFullRemindersAccess(): Promise<{ result: Access }> {
+    throw this.unimplemented(`${this.requestFullRemindersAccess.name} is not implemented on the web`);
   }
 
   public requestAllPermissions(): Promise<PluginPermissionsMap> {

@@ -1,0 +1,7 @@
+{
+  "name": "CAP Calendar",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

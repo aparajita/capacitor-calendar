@@ -50,11 +50,11 @@ npm install @ebarooni/capacitor-calendar@^5
 npx cap sync
 ```
 
-## [Demo (click for details)](./example/README.md)
+## [Demo (click for details)](app/README.md)
 
-|                 iOS 17                 |                 Android 14                 |
-| :------------------------------------: | :----------------------------------------: |
-| ![](./example/src/assets/ios-demo.gif) | ![](./example/src/assets/android-demo.gif) |
+|              iOS 17              |              Android 14              |
+| :------------------------------: | :----------------------------------: |
+| ![](app/src/assets/ios-demo.gif) | ![](app/src/assets/android-demo.gif) |
 
 On iOS, `readCalendar` permission is not needed when you a
 
@@ -73,27 +73,31 @@ permissions can be found below:
 
 <docgen-index>
 
-- [`checkPermission(...)`](#checkpermission)
-- [`checkAllPermissions()`](#checkallpermissions)
-- [`requestPermission(...)`](#requestpermission)
-- [`requestAllPermissions()`](#requestallpermissions)
-- [`createEventWithPrompt(...)`](#createeventwithprompt)
-- [`selectCalendarsWithPrompt(...)`](#selectcalendarswithprompt)
-- [`listCalendars()`](#listcalendars)
-- [`getDefaultCalendar()`](#getdefaultcalendar)
-- [`createEvent(...)`](#createevent)
-- [`getDefaultRemindersList()`](#getdefaultreminderslist)
-- [`getRemindersLists()`](#getreminderslists)
-- [`createReminder(...)`](#createreminder)
-- [`openCalendar(...)`](#opencalendar)
-- [`openReminders()`](#openreminders)
-- [`listEventsInRange(...)`](#listeventsinrange)
-- [`deleteEventsById(...)`](#deleteeventsbyid)
-- [`createCalendar(...)`](#createcalendar)
-- [`deleteCalendar(...)`](#deletecalendar)
-- [Interfaces](#interfaces)
-- [Type Aliases](#type-aliases)
-- [Enums](#enums)
+* [`checkPermission(...)`](#checkpermission)
+* [`checkAllPermissions()`](#checkallpermissions)
+* [`requestReadOnlyCalendarAccess()`](#requestreadonlycalendaraccess)
+* [`requestWriteOnlyCalendarAccess()`](#requestwriteonlycalendaraccess)
+* [`requestFullCalendarAccess()`](#requestfullcalendaraccess)
+* [`requestFullRemindersAccess()`](#requestfullremindersaccess)
+* [`requestAllPermissions()`](#requestallpermissions)
+* [`requestPermission(...)`](#requestpermission)
+* [`listCalendars(...)`](#listcalendars)
+* [`getDefaultCalendar()`](#getdefaultcalendar)
+* [`selectCalendarsWithPrompt(...)`](#selectcalendarswithprompt)
+* [`createCalendar(...)`](#createcalendar)
+* [`deleteCalendar(...)`](#deletecalendar)
+* [`openCalendar(...)`](#opencalendar)
+* [`createEvent(...)`](#createevent)
+* [`createEventWithPrompt(...)`](#createeventwithprompt)
+* [`listEventsInRange(...)`](#listeventsinrange)
+* [`deleteEventsById(...)`](#deleteeventsbyid)
+* [`createReminder(...)`](#createreminder)
+* [`getDefaultRemindersList()`](#getdefaultreminderslist)
+* [`getRemindersLists()`](#getreminderslists)
+* [`openReminders()`](#openreminders)
+* [Interfaces](#interfaces)
+* [Type Aliases](#type-aliases)
+* [Enums](#enums)
 
 </docgen-index>
 

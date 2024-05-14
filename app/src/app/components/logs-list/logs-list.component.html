@@ -1,0 +1,19 @@
+<ion-list [inset]="true">
+  <ng-container *ngrxLet="storeService.selectLogs$ as logs">
+    @for (log of logs; track $index) {
+      <ion-item lines="full">
+        <ion-label class="ion-text-wrap">
+          <!-- prettier-ignore -->
+          <div
+            [style]="{
+              color: log.isError
+                ? 'var(--ion-color-danger)'
+                : 'var(--ion-color-dark)'
+            }"
+            style="white-space: pre-wrap; font: 13px monospace"
+          >{{ log.message }}</div>
+        </ion-label>
+      </ion-item>
+    }
+  </ng-container>
+</ion-list>

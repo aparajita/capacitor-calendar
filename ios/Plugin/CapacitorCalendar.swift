@@ -2,269 +2,239 @@ import Foundation
 import Capacitor
 import EventKitUI
 
-public class CapacitorCalendar: NSObject, EKEventEditViewDelegate, EKCalendarChooserDelegate {
-    private let bridge: (any CAPBridgeProtocol)?
-    private let eventStore: EKEventStore
+public class CapacitorCalendar: CapacitorCalendarBase, EKEventEditViewDelegate, EKCalendarChooserDelegate {
     private var currentCreateEventContinuation: CheckedContinuation<[String], any Error>?
-    private var currentSelectCalendarsContinuation: CheckedContinuation<[[String: String]], any Error>?
+    private var currentSelectCalendarsContinuation: CheckedContinuation<[[String: Any]], any Error>?
 
-    init(bridge: (any CAPBridgeProtocol)?, eventStore: EKEventStore) {
-        self.bridge = bridge
-        self.eventStore = eventStore
+    // MARK: - Permissions
+
+    public func checkAllPermissions() -> [String: String] {
+        return checkAllPermissions(entity: .event, source: #function)
     }
 
-    public func createEventWithPrompt(with parameters: EventCreationParameters) async throws -> [String] {
-        let newEvent = EKEvent(eventStore: eventStore)
-        if let calendarId = parameters.calendarId, let calendar = eventStore.calendar(withIdentifier: calendarId) {
-            newEvent.calendar = calendar
-        } else {
-            newEvent.calendar = eventStore.defaultCalendarForNewEvents
-        }
-        newEvent.title = parameters.title
-        if let location = parameters.location {
-            newEvent.location = location
-        }
-        if let startDate = parameters.startDate {
-            newEvent.startDate = Date(timeIntervalSince1970: startDate / 1000)
-        }
-        if let endDate = parameters.endDate {
-            newEvent.endDate = Date(timeIntervalSince1970: endDate / 1000)
-        }
-        if let isAllDay = parameters.isAllDay {
-            newEvent.isAllDay = isAllDay
-        }
-        if let alertOffsetInMinutes = parameters.alertOffsetInMinutes, alertOffsetInMinutes >= 0 {
-            newEvent.addAlarm(EKAlarm(relativeOffset: TimeInterval(-alertOffsetInMinutes * 60)))
-        }
+    @MainActor
+    public func requestWriteAccessToEvents() async throws -> [String: String] {
+        do {
+            var granted: Bool
 
-        return try await withCheckedThrowingContinuation { continuation in
-            guard let viewController = bridge?.viewController else {
-                continuation.resume(throwing: CapacitorCalendarPluginError.viewControllerUnavailable)
-                return
+            if #available(iOS 17.0, *) {
+                granted = try await eventStore.requestWriteOnlyAccessToEvents()
+            } else {
+                granted = try await eventStore.requestAccess(to: .event)
             }
 
-            Task { @MainActor in
-                let eventEditViewController = EKEventEditViewController()
-                eventEditViewController.event = newEvent
-                eventEditViewController.eventStore = eventStore
-                eventEditViewController.editViewDelegate = self
-                currentCreateEventContinuation = continuation
-                viewController.present(eventEditViewController, animated: true, completion: nil)
+            let permisson = granted ? PermissionState.granted.rawValue : PermissionState.denied.rawValue
+            return ["result": permisson]
+        } catch {
+            throw CapacitorCalendarError(fromError: error, source: #function)
+        }
+    }
+
+    public func requestFullAccessToEvents() async throws -> String {
+        return try await requestFullAccessTo(.event, source: #function)
+    }
+
+    // MARK: - Calendars
+
+    @MainActor
+    public func selectCalendarsWithPrompt(selectionStyle: Int, displayStyle: Int) async throws -> [[String: Any]] {
+        guard let bridgeViewController = bridge?.viewController,
+              let selectionStyle = EKCalendarChooserSelectionStyle(rawValue: selectionStyle),
+              let displayStyle = EKCalendarChooserDisplayStyle(rawValue: displayStyle) else {
+            throw CapacitorCalendarError(.noViewController, source: #function)
+        }
+
+        do {
+            return try await withCheckedThrowingContinuation { continuation in
+                let calendarChooser = EKCalendarChooser(
+                    selectionStyle: selectionStyle,
+                    displayStyle: displayStyle,
+                    eventStore: eventStore
+                )
+                calendarChooser.showsDoneButton = true
+                calendarChooser.showsCancelButton = true
+                calendarChooser.delegate = self
+                currentSelectCalendarsContinuation = continuation
+                bridgeViewController.present(
+                    UINavigationController(rootViewController: calendarChooser),
+                    animated: true,
+                    completion: nil
+                )
             }
+        } catch {
+            throw CapacitorCalendarError(fromError: error, source: #function)
         }
     }
 
-    public func selectCalendarsWithPrompt(selectionStyle: Int, displayStyle: Int) async throws -> [[String: String]] {
-        return try await withCheckedThrowingContinuation { continuation in
-            guard let viewController = bridge?.viewController else {
-                continuation.resume(throwing: CapacitorCalendarPluginError.viewControllerUnavailable)
-                return
+    // Delegate method for EKCalendarChooser presented in selectCalendarsWithPrompt()
+    public func calendarChooserDidFinish(_ calendarChooser: EKCalendarChooser) {
+        let selectedCalendars = calendarsToDicts(calendarChooser.selectedCalendars)
+        bridge?.viewController?.dismiss(animated: true) {
+            self.currentSelectCalendarsContinuation?.resume(returning: selectedCalendars)
+        }
+    }
+
+    // Delegate method for EKCalendarChooser presented in selectCalendarsWithPrompt()
+    public func calendarChooserDidCancel(_ calendarChooser: EKCalendarChooser) {
+        bridge?.viewController?.dismiss(animated: true) {
+            self.currentSelectCalendarsContinuation?.resume(returning: [])
+        }
+    }
+
+    public func listCalendars(_ access: EKCalendarChooserDisplayStyle) -> [[String: Any]] {
+        let calendars = calendarsToDicts(Set(eventStore.calendars(for: .event)))
+
+        if access == EKCalendarChooserDisplayStyle.writableCalendarsOnly {
+            return calendars.filter { calendar in
+                return calendar["writeable"] as? Bool ?? false
             }
+        } else {
+            return calendars
+        }
+    }
 
-            Task { @MainActor in
-                if let selectionStyle = EKCalendarChooserSelectionStyle(rawValue: selectionStyle),
-                   let displayStyle = EKCalendarChooserDisplayStyle(rawValue: displayStyle) {
-                    let calendarChooser = EKCalendarChooser(
-                        selectionStyle: selectionStyle,
-                        displayStyle: displayStyle,
-                        eventStore: eventStore
-                    )
-                    calendarChooser.showsDoneButton = true
-                    calendarChooser.showsCancelButton = true
-                    calendarChooser.delegate = self
-                    currentSelectCalendarsContinuation = continuation
-                    viewController.present(
-                        UINavigationController(rootViewController: calendarChooser),
-                        animated: true,
-                        completion: nil
-                    )
-                } else {
-                    continuation.resume(throwing: CapacitorCalendarPluginError.viewControllerUnavailable)
-                    return
-                }
+    public func getDefaultCalendar() -> [String: Any]? {
+        return getDefaultCalendar(for: .event, source: #function)
+    }
+
+    @MainActor
+    public func openCalendar(date: Double) async throws {
+        try await open(URL(string: "calshow:\(date)"), errorType: .unableToOpenCalendar, source: #function)
+    }
+
+    @MainActor
+    public func createCalendar(title: String, color: String?) async throws -> String {
+        let newCalendar = EKCalendar(for: .event, eventStore: eventStore)
+        newCalendar.title = title
+        newCalendar.source = eventStore.defaultCalendarForNewEvents?.source
+
+        if let calendarColor = color {
+            newCalendar.cgColor = UIColor(hex: calendarColor)?.cgColor
+        } else {
+            newCalendar.cgColor = eventStore.defaultCalendarForNewEvents?.cgColor
+        }
+
+        do {
+            try eventStore.saveCalendar(newCalendar, commit: true)
+        } catch {
+            throw CapacitorCalendarError(fromError: error, source: #function)
+        }
+
+        return newCalendar.calendarIdentifier
+    }
+
+    @MainActor
+    public func deleteCalendar(id: String) throws {
+        if let calendar = eventStore.calendar(withIdentifier: id) {
+            if calendar.allowsContentModifications {
+                try eventStore.removeCalendar(calendar, commit: true)
+            } else {
+                throw CapacitorCalendarError(.noAccess, source: #function, data: "calendar/write")
             }
+        } else {
+            throw CapacitorCalendarError(.calendarNotFound, source: #function)
         }
     }
 
-    public func listCalendars() -> [[String: String]] {
-        return convertEKCalendarsToDictionaries(calendars: Set(eventStore.calendars(for: .event)))
-    }
+    // MARK: - Events
 
-    public func getDefaultCalendar() throws -> [String: String] {
-        let defaultCalendar = eventStore.defaultCalendarForNewEvents
-        if let defaultCalendar = defaultCalendar {
-            return [
-                "id": defaultCalendar.calendarIdentifier,
-                "title": defaultCalendar.title
-            ]
-        } else {
-            throw CapacitorCalendarPluginError.noDefaultCalendar
-        }
-    }
-
-    public func createEvent(with parameters: EventCreationParameters) throws -> String {
-        let fallbackStartDate = Date()
-        let newEvent = EKEvent(eventStore: eventStore)
-        if let calendarId = parameters.calendarId, let calendar = eventStore.calendar(withIdentifier: calendarId) {
-            newEvent.calendar = calendar
-        } else {
-            newEvent.calendar = eventStore.defaultCalendarForNewEvents
-        }
-        newEvent.title = parameters.title
-        if let location = parameters.location {
-            newEvent.location = location
-        }
-        if let startDate = parameters.startDate {
-            newEvent.startDate = Date(timeIntervalSince1970: startDate / 1000)
-        } else {
-            newEvent.startDate = fallbackStartDate
-        }
-        if let endDate = parameters.endDate {
-            newEvent.endDate = Date(timeIntervalSince1970: endDate / 1000)
-        } else {
-            newEvent.endDate = fallbackStartDate.addingTimeInterval(3600)
-        }
-        if let isAllDay = parameters.isAllDay {
-            newEvent.isAllDay = isAllDay
-        }
-        if let alertOffsetInMinutes = parameters.alertOffsetInMinutes, alertOffsetInMinutes >= 0 {
-            newEvent.addAlarm(EKAlarm(relativeOffset: TimeInterval(-alertOffsetInMinutes * 60)))
-        }
+    @MainActor
+    public func createEvent(with parameters: EventCreationParameters) async throws -> String {
+        let newEvent = try setupCreateEvent(with: parameters, prompting: false, source: #function)
 
         do {
             try eventStore.save(newEvent, span: .thisEvent)
             return newEvent.eventIdentifier
         } catch {
-            throw CapacitorCalendarPluginError.undefinedEvent
+            throw CapacitorCalendarError(.osError, source: #function, data: error.localizedDescription)
         }
     }
 
-    public func checkAllPermissions() async throws -> [String: String] {
-        return try await withCheckedThrowingContinuation { continuation in
-            var permissionsState: [String: String]
-            switch EKEventStore.authorizationStatus(for: .event) {
-            case .authorized, .fullAccess:
-                permissionsState = [
-                    "readCalendar": PermissionState.granted.rawValue,
-                    "writeCalendar": PermissionState.granted.rawValue
-                ]
-            case .denied, .restricted:
-                permissionsState = [
-                    "readCalendar": PermissionState.denied.rawValue,
-                    "writeCalendar": PermissionState.denied.rawValue
-                ]
-            case .writeOnly:
-                permissionsState = [
-                    "readCalendar": PermissionState.prompt.rawValue,
-                    "writeCalendar": PermissionState.granted.rawValue
-                ]
-            case .notDetermined:
-                permissionsState = [
-                    "readCalendar": PermissionState.prompt.rawValue,
-                    "writeCalendar": PermissionState.prompt.rawValue
-                ]
-            @unknown default:
-                continuation.resume(throwing: CapacitorCalendarPluginError.unknownPermissionStatus)
-                return
-            }
-            continuation.resume(returning: permissionsState)
+    @MainActor
+    public func createEventWithPrompt(with parameters: EventCreationParameters) async throws -> [String] {
+        let newEvent = try setupCreateEvent(with: parameters, prompting: true, source: #function)
+
+        guard let bridgeViewController = bridge?.viewController else {
+            throw CapacitorCalendarError(.noViewController, source: #function)
+        }
+
+        let eventViewController = EKEventEditViewController()
+        eventViewController.event = newEvent
+        eventViewController.eventStore = eventStore
+        eventViewController.editViewDelegate = self
+
+        return try await withCheckedThrowingContinuation { [bridgeViewController] continuation in
+            let eventEditViewController = EKEventEditViewController()
+            eventEditViewController.event = newEvent
+            eventEditViewController.eventStore = eventStore
+            eventEditViewController.editViewDelegate = self
+            currentCreateEventContinuation = continuation
+            bridgeViewController.present(eventEditViewController, animated: true, completion: nil)
         }
     }
 
-    public func requestWriteAccessToEvents() async throws -> [String: String] {
-        return try await withCheckedThrowingContinuation { continuation in
-            if #available(iOS 17.0, *) {
-                eventStore.requestWriteOnlyAccessToEvents { granted, error in
-                    if let error = error {
-                        continuation.resume(throwing: CapacitorCalendarPluginError.eventStoreAuthorization)
-                        return
-                    }
-
-                    var permissionState: String
-                    if granted {
-                        permissionState = PermissionState.granted.rawValue
-                    } else {
-                        permissionState = PermissionState.denied.rawValue
-                    }
-                    continuation.resume(returning: ["result": permissionState])
-                }
+    // Delegate for the EKEventEditViewController presented in createEventWithPrompt()
+    public func eventEditViewController(
+        _ controller: EKEventEditViewController,
+        didCompleteWith action: EKEventEditViewAction
+    ) {
+        controller.dismiss(animated: true) {
+            if action == .saved {
+                // We have to assume that if the action is .saved, controller.event will be non-nil
+                self.currentCreateEventContinuation?.resume(returning: [controller.event!.eventIdentifier])
             } else {
-                eventStore.requestAccess(to: .event) { granted, error in
-                    if let error = error {
-                        continuation.resume(throwing: CapacitorCalendarPluginError.eventStoreAuthorization)
-                        return
-                    }
-
-                    var permissionState: String
-                    if granted {
-                        permissionState = PermissionState.granted.rawValue
-                    } else {
-                        permissionState = PermissionState.denied.rawValue
-                    }
-                    continuation.resume(returning: ["result": permissionState])
-                }
+                self.currentCreateEventContinuation?.resume(returning: [])
             }
         }
     }
 
-    public func requestFullAccessToEvents() async throws -> String {
-        return try await withCheckedThrowingContinuation { continuation in
-            if #available(iOS 17.0, *) {
-                eventStore.requestFullAccessToEvents { granted, error in
-                    if let error = error {
-                        continuation.resume(throwing: CapacitorCalendarPluginError.eventStoreAuthorization)
-                        return
-                    }
+    private func setupCreateEvent(with parameters: EventCreationParameters, prompting: Bool, source: String) throws -> EKEvent {
+        let fallbackStartDate = Date()
+        let newEvent = EKEvent(eventStore: eventStore)
 
-                    var permissionState: String
-                    if granted {
-                        permissionState = PermissionState.granted.rawValue
-                    } else {
-                        permissionState = PermissionState.denied.rawValue
-                    }
-                    continuation.resume(returning: permissionState)
-                }
+        if let calendarId = parameters.calendarId,
+           let calendar = eventStore.calendar(withIdentifier: calendarId) {
+            newEvent.calendar = calendar
+        } else {
+            if let defaultCalendar = eventStore.defaultCalendarForNewEvents {
+                newEvent.calendar = defaultCalendar
             } else {
-                eventStore.requestAccess(to: .event) { granted, error in
-                    if let error = error {
-                        continuation.resume(throwing: CapacitorCalendarPluginError.eventStoreAuthorization)
-                        return
-                    }
-
-                    var permissionState: String
-                    if granted {
-                        permissionState = PermissionState.granted.rawValue
-                    } else {
-                        permissionState = PermissionState.denied.rawValue
-                    }
-                    continuation.resume(returning: permissionState)
-                }
+                throw CapacitorCalendarError(.noDefaultCalendar, source: source)
             }
         }
-    }
 
-    public func openCalendar(date: Double) async throws {
-        return try await withCheckedThrowingContinuation { continuation in
-            guard let url = URL(string: "calshow:\(date)") else {
-                continuation.resume(throwing: CapacitorCalendarPluginError.unableToOpenCalendar)
-                return
-            }
-
-            Task { @MainActor in
-                guard UIApplication.shared.canOpenURL(url) else {
-                    continuation.resume(throwing: CapacitorCalendarPluginError.unableToOpenCalendar)
-                    return
-                }
-
-                UIApplication.shared.open(url, options: [:]) { success in
-                    if success {
-                        continuation.resume()
-                    } else {
-                        continuation.resume(throwing: CapacitorCalendarPluginError.unableToOpenCalendar)
-                    }
-                }
-            }
+        // Make sure the event's calendar is writeable.
+        guard newEvent.calendar.allowsContentModifications else {
+            throw CapacitorCalendarError.noAccessForEntity(.calendar, accessType: .write, source: source)
         }
+
+        newEvent.title = parameters.title
+
+        if let location = parameters.location {
+            newEvent.location = location
+        }
+
+        if let startDate = parameters.startDate {
+            newEvent.startDate = Date(timeIntervalSince1970: startDate / 1000)
+        } else if !prompting {
+            newEvent.startDate = fallbackStartDate
+        }
+
+        if let endDate = parameters.endDate {
+            newEvent.endDate = Date(timeIntervalSince1970: endDate / 1000)
+        } else if !prompting {
+            newEvent.endDate = fallbackStartDate.addingTimeInterval(3600)
+        }
+
+        if let isAllDay = parameters.isAllDay {
+            newEvent.isAllDay = isAllDay
+        }
+
+        if let alertOffsetInMinutes = parameters.alertOffsetInMinutes, alertOffsetInMinutes >= 0 {
+            newEvent.addAlarm(EKAlarm(relativeOffset: TimeInterval(-alertOffsetInMinutes * 60)))
+        }
+
+        return newEvent
     }
 
     public func listEventsInRange(
@@ -276,143 +246,71 @@ public class CapacitorCalendar: NSObject, EKEventEditViewDelegate, EKCalendarCho
             end: Date(timeIntervalSince1970: endDate / 1000), calendars: nil
         )
         let events = self.eventStore.events(matching: predicate)
-        return dictionaryRepresentationOfEvents(events: events)
-    }
 
-    public func deleteEventsById(ids: JSArray) async throws -> EventDeleteResults {
-        await withCheckedContinuation { continuation in
-
-            var deletedEvents: [String] = []
-            var failedToDeleteEvents: [String] = []
-
-            for id in ids {
-                guard let event = eventStore.event(withIdentifier: "\(id)") else {
-                    failedToDeleteEvents.append("\(id)")
-                    continue
-                }
-
-                do {
-                    try eventStore.remove(event, span: .thisEvent, commit: false)
-                    deletedEvents.append("\(id)")
-                } catch {
-                    failedToDeleteEvents.append("\(id)")
-                }
-            }
-
-            do {
-                try eventStore.commit()
-            } catch {
-                failedToDeleteEvents.append(contentsOf: deletedEvents)
-                deletedEvents.removeAll()
-            }
-
-            continuation.resume(returning: EventDeleteResults(deleted: deletedEvents, failed: failedToDeleteEvents))
-        }
-    }
-
-    public func createCalendar(title: String, color: String?) throws -> String {
-        let newCalendar = EKCalendar(for: .event, eventStore: eventStore)
-        newCalendar.title = title
-        if let calendarColor = color {
-            newCalendar.cgColor = UIColor(hex: calendarColor)?.cgColor
-        } else {
-            newCalendar.cgColor = eventStore.defaultCalendarForNewEvents?.cgColor
-        }
-        newCalendar.source = eventStore.defaultCalendarForNewEvents?.source
-
-        do {
-            try eventStore.saveCalendar(newCalendar, commit: true)
-        } catch {
-            throw CapacitorCalendarPluginError.unableToCreateCalendar
-        }
-
-        return newCalendar.calendarIdentifier
-    }
-
-    public func deleteCalendar(id: String) throws {
-        if let calendar = eventStore.calendar(withIdentifier: id) {
-            try eventStore.removeCalendar(calendar, commit: true)
-        } else {
-            throw CapacitorCalendarPluginError.calendarNotFound
-        }
-    }
-
-    public func eventEditViewController(
-        _ controller: EKEventEditViewController,
-        didCompleteWith action: EKEventEditViewAction
-    ) {
-        controller.dismiss(animated: true) {
-            if action == .saved {
-                if let event = controller.event {
-                    self.currentCreateEventContinuation?.resume(returning: [event.eventIdentifier])
-                } else {
-                    self.currentCreateEventContinuation?.resume(throwing: CapacitorCalendarPluginError.undefinedEvent)
-                    return
-                }
-            } else if action == .canceled {
-                self.currentCreateEventContinuation?.resume(returning: [])
-            } else {
-                self.currentCreateEventContinuation?.resume(throwing: CapacitorCalendarPluginError.unknownActionEventCreationPrompt)
-            }
-        }
-    }
-
-    public func calendarChooserDidFinish(_ calendarChooser: EKCalendarChooser) {
-        let selectedCalendars = convertEKCalendarsToDictionaries(calendars: calendarChooser.selectedCalendars)
-        bridge?.viewController?.dismiss(animated: true) {
-            self.currentSelectCalendarsContinuation?.resume(returning: selectedCalendars)
-        }
-    }
-
-    public func calendarChooserDidCancel(_ calendarChooser: EKCalendarChooser) {
-        bridge?.viewController?.dismiss(animated: true) {
-            self.currentSelectCalendarsContinuation?.resume(returning: [])
-        }
-    }
-
-    private func convertEKCalendarsToDictionaries(calendars: Set<EKCalendar>) -> [[String: String]] {
-        var result: [[String: String]] = []
-
-        for calendar in calendars {
-            let calendarDict: [String: String] = [
-                "id": calendar.calendarIdentifier,
-                "title": calendar.title
-            ]
-            result.append(calendarDict)
-        }
-
-        return result
-    }
-
-    private func dictionaryRepresentationOfEvents(events: [EKEvent]) -> [[String: Any]] {
         return events.map { event in
             var dict = [String: Any]()
             dict["id"] = event.eventIdentifier
-            if let title = event.title, !title.isEmpty {
-                dict["title"] = title
+
+            for property in [
+                (event.title, "title"),
+                (event.location, "location"),
+                (event.organizer?.name, "organizer"),
+                (event.notes, "description")
+            ] {
+                if let value = property.0,
+                   !value.isEmpty {
+                    dict[property.1] = value
+                }
             }
-            if let location = event.location, !location.isEmpty {
-                dict["location"] = location
+
+            for dateProperty in [
+                (event.startDate, "startDate", "eventTimezone"),
+                (event.endDate, "endDate", "eventEndTimeZone")
+            ] {
+                if let date = dateProperty.0 {
+                    dict[dateProperty.1] = date.timeIntervalSince1970
+
+                    if let timezone = event.timeZone,
+                       let abbreviation = timezone.abbreviation(for: date) {
+                        dict[dateProperty.2] = abbreviation
+                    }
+                }
             }
-            if let organizer = event.organizer?.name, !organizer.isEmpty {
-                dict["organizer"] = organizer
-            }
-            if let notes = event.notes, !notes.isEmpty {
-                dict["description"] = notes
-            }
-            if let startDate = event.startDate {
-                dict["startDate"] = startDate.timeIntervalSince1970
-            }
-            if let endDate = event.endDate {
-                dict["endDate"] = endDate.timeIntervalSince1970
-            }
-            if let timezone = event.timeZone, (timezone.abbreviation()?.isEmpty) == nil {
-                dict["eventTimezone"] = timezone.abbreviation()
-                dict["eventEndTimezone"] = timezone.abbreviation()
-            }
+
             dict["isAllDay"] = event.isAllDay
             dict["calendarId"] = event.calendar.calendarIdentifier
             return dict
         }
+    }
+
+    @MainActor
+    public func deleteEventsById(ids: JSArray) async throws -> EventDeleteResults {
+        var deleted: [String] = []
+        var failed: [String] = []
+
+        for id in ids {
+            let strId = "\(id)"
+            guard let event = eventStore.event(withIdentifier: strId),
+                  event.calendar.allowsContentModifications else {
+                failed.append(strId)
+                continue
+            }
+
+            do {
+                try eventStore.remove(event, span: .thisEvent, commit: false)
+                deleted.append(strId)
+            } catch {
+                failed.append(strId)
+            }
+        }
+
+        do {
+            try eventStore.commit()
+        } catch {
+            failed.append(contentsOf: deleted)
+            deleted.removeAll()
+        }
+
+        return EventDeleteResults(deleted: deleted, failed: failed)
     }
 }

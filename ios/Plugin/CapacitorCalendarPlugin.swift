@@ -1,103 +1,163 @@
 import Foundation
+import EventKitUI
 import EventKit
 import Capacitor
 
-/**
- * Please read the Capacitor iOS Plugin Development Guide
- * here: https://capacitorjs.com/docs/plugins/ios
- */
 @objc(CapacitorCalendarPlugin)
 public class CapacitorCalendarPlugin: CAPPlugin {
     private let eventStore = EKEventStore()
     private lazy var calendar = CapacitorCalendar(bridge: self.bridge, eventStore: self.eventStore)
-    private lazy var reminders = CapacitorReminders(eventStore: self.eventStore)
+    private lazy var reminders = CapacitorReminders(bridge: self.bridge, eventStore: self.eventStore)
 
-    @objc public func checkPermission(_ call: CAPPluginCall) {
-        guard let alias = call.getString("alias") else {
-            call.reject("[CapacitorCalendar.\(#function)] Permission name is not defined")
-            return
-        }
+    // MARK: - Utils
 
-        Task {
-            do {
-                try await handlePermissionCheck(for: alias, with: call)
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Could not determine the status of the requested permission")
-            }
+    private func tryCall(_ call: CAPPluginCall, source: String, _ op: () throws -> Void) {
+        do {
+            try op()
+        } catch {
+            CapacitorCalendarError.reject(call, error: error, source: source)
         }
     }
 
-    private func handlePermissionCheck(for alias: String, with call: CAPPluginCall) async throws {
+    private func tryAsyncCall(_ call: CAPPluginCall, source: String, _ op: () async throws -> Void) async {
+        do {
+            try await op()
+        } catch {
+            CapacitorCalendarError.reject(call, error: error, source: source)
+        }
+    }
+
+    private func getNonEmptyString(_ call: CAPPluginCall, _ param: String, source: String) -> String? {
+        guard let value = call.getString(param),
+              !value.isEmpty else {
+            CapacitorCalendarError.reject(call, type: .missingKey, source: source, data: param)
+            return nil
+        }
+
+        return value
+    }
+
+    // MARK: - Permissions
+
+    private func callHasAccess(_ call: CAPPluginCall, entityType: EntityType, accessType: AccessType, source: String) throws -> Bool {
+        let eventTypeName = String(describing: entityType)
+        let accessTypeName = String(describing: accessType)
+        let permission = try doPermissionCheck(for: "\(accessTypeName)\(eventTypeName.capitalized)")
+
+        if permission == "granted" {
+            return true
+        } else {
+            CapacitorCalendarError.rejectWithNoAccess(call, entityType: entityType, accessType: accessType, source: source)
+            return false
+        }
+    }
+
+    private func doPermissionCheck(for alias: String) throws -> String {
         let permissionsState: [String: String]
 
         switch alias {
         case "readCalendar":
-            permissionsState = try await calendar.checkAllPermissions()
+            permissionsState = calendar.checkAllPermissions()
+
         case "writeCalendar":
-            permissionsState = try await calendar.checkAllPermissions()
+            permissionsState = calendar.checkAllPermissions()
+
         case "readReminders":
-            permissionsState = try await reminders.checkAllPermissions()
+            permissionsState = reminders.checkAllPermissions()
+
         case "writeReminders":
-            permissionsState = try await reminders.checkAllPermissions()
+            permissionsState = reminders.checkAllPermissions()
+
         default:
-            throw CapacitorCalendarPluginError.unknownPermissionStatus
+            throw CapacitorCalendarError(.invalidKey, source: #function, data: alias)
         }
 
         guard let permissionResult = permissionsState[alias] else {
-            throw CapacitorCalendarPluginError.unknownPermissionStatus
+            throw CapacitorCalendarError(.internalError, source: #function, data: "Invalid permission state")
         }
 
-        call.resolve(["result": permissionResult])
+        return permissionResult
+    }
+
+    @objc public func checkPermission(_ call: CAPPluginCall) {
+        guard let alias = getNonEmptyString(call, "alias", source: #function) else {
+            return
+        }
+
+        tryCall(call, source: #function) {
+            try call.resolve(["result": self.doPermissionCheck(for: alias)])
+        }
     }
 
     @objc public func checkAllPermissions(_ call: CAPPluginCall) {
+        let calendarPermissionsState = calendar.checkAllPermissions()
+        let remindersPermissionsState = reminders.checkAllPermissions()
+        call.resolve(calendarPermissionsState.merging(remindersPermissionsState) { (_, new) in new })
+    }
+
+    @objc public func requestWriteOnlyCalendarAccess(_ call: CAPPluginCall) {
         Task {
-            do {
-                let calendarPermissionsState = try await calendar.checkAllPermissions()
-                let remindersPermissionsState = try await reminders.checkAllPermissions()
-                call.resolve(calendarPermissionsState.merging(remindersPermissionsState) { (_, new) in new })
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Could not determine the status of the requested permissions")
-                return
+            await tryAsyncCall(call, source: #function) {
+                let result = try await calendar.requestWriteAccessToEvents()
+                call.resolve(result)
             }
         }
     }
 
+    @objc public func requestFullCalendarAccess(_ call: CAPPluginCall) {
+        Task {
+            await tryAsyncCall(call, source: #function) {
+                let result = try await calendar.requestFullAccessToEvents()
+                call.resolve(["result": result])
+            }
+        }
+    }
+
+    @objc public func requestFullRemindersAccess(_ call: CAPPluginCall) {
+        Task {
+            await tryAsyncCall(call, source: #function) {
+                let result = try await reminders.requestFullAccessToReminders()
+                call.resolve(["result": result])
+            }
+        }
+    }
+
+    // Deprecated, use methods above instead.
     @objc public func requestPermission(_ call: CAPPluginCall) {
-        guard let alias = call.getString("alias") else {
-            call.reject("[CapacitorCalendar.\(#function)] Permission name is not defined")
+        guard let alias = getNonEmptyString(call, "alias", source: #function) else {
             return
         }
 
         Task {
-            do {
+            await tryAsyncCall(call, source: #function) {
                 switch alias {
                 case "writeCalendar":
                     let result = try await calendar.requestWriteAccessToEvents()
                     call.resolve(result)
+
                 case "readCalendar":
                     let result = try await calendar.requestFullAccessToEvents()
                     call.resolve(["result": result])
+
                 case "writeReminders":
                     let result = try await reminders.requestFullAccessToReminders()
                     call.resolve(["result": result])
+
                 case "readReminders":
                     let result = try await reminders.requestFullAccessToReminders()
                     call.resolve(["result": result])
+
                 default:
-                    call.reject("[CapacitorCalendar.\(#function)] Could not authorize \(alias)")
+                    CapacitorCalendarError.reject(call, type: .invalidKey, source: #function, data: alias)
                     return
                 }
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Could not authorize \(alias)")
-                return
             }
         }
     }
 
     @objc public func requestAllPermissions(_ call: CAPPluginCall) {
         Task {
-            do {
+            await tryAsyncCall(call, source: #function) {
                 let calendarResult = try await calendar.requestFullAccessToEvents()
                 let remindersResult = try await reminders.requestFullAccessToReminders()
                 var result: [String: String] = [
@@ -106,136 +166,223 @@ public class CapacitorCalendarPlugin: CAPPlugin {
                     "readReminders": PermissionState.denied.rawValue,
                     "writeReminders": PermissionState.denied.rawValue
                 ]
+
                 if calendarResult == PermissionState.granted.rawValue {
                     result["readCalendar"] = PermissionState.granted.rawValue
                     result["writeCalendar"] = PermissionState.granted.rawValue
                 }
+
                 if remindersResult == PermissionState.granted.rawValue {
                     result["readReminders"] = PermissionState.granted.rawValue
                     result["writeReminders"] = PermissionState.granted.rawValue
-
                 }
+
                 call.resolve(result)
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Could not authorize all permissions")
-                return
             }
         }
     }
 
-    @objc public func createEventWithPrompt(_ call: CAPPluginCall) {
-        let title = call.getString("title", "")
-        let location = call.getString("location")
-        let startDate = call.getDouble("startDate")
-        let endDate = call.getDouble("endDate")
-        let isAllDay = call.getBool("isAllDay")
-        let calendarId = call.getString("calendarId")
-        let alertOffsetInMinutes = call.getDouble("alertOffsetInMinutes")
-
-        let eventParameters = EventCreationParameters(
-            title: title,
-            calendarId: calendarId,
-            location: location,
-            startDate: startDate,
-            endDate: endDate,
-            isAllDay: isAllDay,
-            alertOffsetInMinutes: alertOffsetInMinutes
-        )
-
-        Task {
-            do {
-                let result = try await calendar.createEventWithPrompt(with: eventParameters)
-                call.resolve(["result": result])
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Unable to retrieve view controller")
-                return
-            }
-        }
-    }
+    // MARK: - Calendars
 
     @objc public func selectCalendarsWithPrompt(_ call: CAPPluginCall) {
         guard let selectionStyle = call.getInt("selectionStyle") else {
-            call.reject("[CapacitorCalendar.\(#function)] Selection style was not provided")
+            CapacitorCalendarError.reject(call, type: .missingKey, source: #function, data: "selectionStyle")
             return
         }
+
         guard let displayStyle = call.getInt("displayStyle") else {
-            call.reject("[CapacitorCalendar.\(#function)] Display style was not provided")
+            CapacitorCalendarError.reject(call, type: .missingKey, source: #function, data: "displayStyle")
             return
         }
 
         Task {
-            do {
+            await tryAsyncCall(call, source: #function) {
                 let result = try await calendar.selectCalendarsWithPrompt(selectionStyle: selectionStyle, displayStyle: displayStyle)
                 call.resolve(["result": result])
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Calendars selection prompt got canceled")
-                return
             }
         }
     }
 
     @objc public func listCalendars(_ call: CAPPluginCall) {
-        call.resolve(["result": calendar.listCalendars()])
+        tryCall(call, source: #function) {
+            if try callHasAccess(call, entityType: .calendar, accessType: .read, source: #function) {
+                let access = call.getInt("access", EKCalendarChooserDisplayStyle.allCalendars.rawValue) == EKCalendarChooserDisplayStyle.allCalendars.rawValue ? EKCalendarChooserDisplayStyle.allCalendars : EKCalendarChooserDisplayStyle.writableCalendarsOnly
+                call.resolve(["result": calendar.listCalendars(access)])
+            }
+        }
     }
 
     @objc public func getDefaultCalendar(_ call: CAPPluginCall) {
-        do {
-            try call.resolve(["result": calendar.getDefaultCalendar()])
-        } catch {
-            call.reject("[CapacitorCalendar.\(#function)] No default calendar was found")
+        tryCall(call, source: #function) {
+            if try callHasAccess(call, entityType: .calendar, accessType: .read, source: #function) {
+                let defaultCalendar = calendar.getDefaultCalendar()
+                call.resolve(["result": defaultCalendar ?? NSNull()])
+            }
+        }
+    }
+
+    @objc public func createCalendar(_ call: CAPPluginCall) {
+        guard let title = getNonEmptyString(call, "title", source: #function) else {
             return
         }
+
+        let color = call.getString("color")
+
+        Task {
+            await tryAsyncCall(call, source: #function) {
+                if try callHasAccess(call, entityType: .calendar, accessType: .write, source: #function) {
+                    let id = try await calendar.createCalendar(title: title, color: color)
+                    call.resolve(["result": id])
+                }
+            }
+        }
+    }
+
+    @objc public func deleteCalendar(_ call: CAPPluginCall) {
+        guard let id = getNonEmptyString(call, "id", source: #function) else {
+            return
+        }
+
+        Task {
+            await tryAsyncCall(call, source: #function) {
+                if try callHasAccess(call, entityType: .calendar, accessType: .write, source: #function) {
+                    try await calendar.deleteCalendar(id: id)
+                    call.resolve()
+                }
+            }
+        }
+    }
+
+    @objc public func openCalendar(_ call: CAPPluginCall) {
+        let interval: Double
+
+        if let date = call.getDouble("date") {
+            interval = Date(timeIntervalSince1970: date / 1000).timeIntervalSinceReferenceDate
+        } else {
+            interval = Date.timeIntervalSinceReferenceDate
+        }
+
+        Task {
+            await tryAsyncCall(call, source: #function) {
+                try await calendar.openCalendar(date: interval)
+            }
+        }
+    }
+
+    // MARK: - Events
+
+    private func doCreateEvent(_ call: CAPPluginCall, prompt: Bool, source: String) {
+        Task {
+            await tryAsyncCall(call, source: source) {
+                if try !callHasAccess(call, entityType: .calendar, accessType: .write, source: source) {
+                    return
+                }
+
+                let title = call.getString("title", "New event")
+                let location = call.getString("location")
+                let startDate = call.getDouble("startDate")
+                let endDate = call.getDouble("endDate")
+                let isAllDay = call.getBool("isAllDay")
+                let calendarId = call.getString("calendarId")
+                let alertOffsetInMinutes = call.getDouble("alertOffsetInMinutes")
+
+                let eventParameters = EventCreationParameters(
+                    title: title,
+                    calendarId: calendarId,
+                    location: location,
+                    startDate: startDate,
+                    endDate: endDate,
+                    isAllDay: isAllDay,
+                    alertOffsetInMinutes: alertOffsetInMinutes
+                )
+
+                if prompt {
+                    let result = try await calendar.createEventWithPrompt(with: eventParameters)
+                    call.resolve(["result": result])
+                } else {
+                    let result = try await calendar.createEvent(with: eventParameters)
+                    call.resolve(["result": result])
+                }
+            }
+        }
+
     }
 
     @objc public func createEvent(_ call: CAPPluginCall) {
-        guard let title = call.getString("title") else {
-            call.reject("[CapacitorCalendar.\(#function)] A title for the event was not provided")
+        if getNonEmptyString(call, "title", source: #function) == nil {
             return
         }
-        let location = call.getString("location")
-        let startDate = call.getDouble("startDate")
-        let endDate = call.getDouble("endDate")
-        let isAllDay = call.getBool("isAllDay")
-        let calendarId = call.getString("calendarId")
-        let alertOffsetInMinutes = call.getDouble("alertOffsetInMinutes")
 
-        let eventParameters = EventCreationParameters(
-            title: title,
-            calendarId: calendarId,
-            location: location,
-            startDate: startDate,
-            endDate: endDate,
-            isAllDay: isAllDay,
-            alertOffsetInMinutes: alertOffsetInMinutes
-        )
+        doCreateEvent(call, prompt: false, source: #function)
+    }
 
-        do {
-            let id = try calendar.createEvent(with: eventParameters)
-            call.resolve(["result": id])
-        } catch {
-            call.reject("[CapacitorCalendar.\(#function)] Unable to create event")
+    @objc public func createEventWithPrompt(_ call: CAPPluginCall) {
+        doCreateEvent(call, prompt: true, source: #function)
+    }
+
+    @objc public func listEventsInRange(_ call: CAPPluginCall) {
+        guard let startDate = call.getDouble("startDate") else {
+            CapacitorCalendarError.reject(call, type: .missingKey, source: #function, data: "startDate")
             return
+        }
+
+        guard let endDate = call.getDouble("endDate") else {
+            CapacitorCalendarError.reject(call, type: .missingKey, source: #function, data: "endDate")
+            return
+        }
+
+        tryCall(call, source: #function) {
+            if try callHasAccess(call, entityType: .calendar, accessType: .read, source: #function) {
+                try call.resolve(["result": calendar.listEventsInRange(startDate: startDate, endDate: endDate)])
+            }
         }
     }
 
-    @objc public func getDefaultRemindersList(_ call: CAPPluginCall) {
-        do {
-            try call.resolve(["result": reminders.getDefaultRemindersList()])
-        } catch {
-            call.reject("[CapacitorCalendar.\(#function)] No default Reminders list was found")
+    @objc public func deleteEventsById(_ call: CAPPluginCall) {
+        guard let eventIds = call.getArray("ids") else {
+            CapacitorCalendarError.reject(call, type: .missingKey, source: #function, data: "ids")
             return
+        }
+
+        Task {
+            await tryAsyncCall(call, source: #function) {
+                if try callHasAccess(call, entityType: .calendar, accessType: .write, source: #function) {
+                    let deleteResult = try await calendar.deleteEventsById(ids: eventIds)
+                    call.resolve([
+                        "result": [
+                            "deleted": deleteResult.deleted,
+                            "failed": deleteResult.failed
+                        ]
+                    ])
+                }
+            }
+        }
+    }
+
+    // MARK: - Reminders
+
+    @objc public func getDefaultRemindersList(_ call: CAPPluginCall) {
+        tryCall(call, source: #function) {
+            if try callHasAccess(call, entityType: .reminders, accessType: .read, source: #function) {
+                let result = reminders.getDefaultRemindersList()
+                call.resolve(["result": result ?? NSNull()])
+            }
         }
     }
 
     @objc public func getRemindersLists(_ call: CAPPluginCall) {
-        call.resolve(["result": reminders.getRemindersLists()])
+        tryCall(call, source: #function) {
+            if try callHasAccess(call, entityType: .reminders, accessType: .read, source: #function) {
+                call.resolve(["result": reminders.getRemindersLists()])
+            }
+        }
     }
 
     @objc public func createReminder (_ call: CAPPluginCall) {
-        guard let title = call.getString("title") else {
-            call.reject("[CapacitorCalendar.\(#function)] A title for the reminder was not provided")
+        guard let title = getNonEmptyString(call, "title", source: #function) else {
             return
         }
+
         let listId = call.getString("listId")
         let priority = call.getInt("priority")
         let isCompleted = call.getBool("isCompleted")
@@ -245,21 +392,20 @@ public class CapacitorCalendarPlugin: CAPPlugin {
         let notes = call.getString("notes")
         let url = call.getString("url")
         let location = call.getString("location")
-
         var recurrence: RecurrenceParameters?
+
         if let recurrenceData = call.getObject("recurrence") {
             guard let frequency = recurrenceData["frequency"] as? Int else {
-                call.reject("[CapacitorCalendar.\(#function)] Frequency must be provided when using recurrence")
+                CapacitorCalendarError.reject(call, type: .missingKey, source: #function, data: "frequency, must be provided when using recurrence")
                 return
             }
 
             guard let interval = recurrenceData["interval"] as? Int, interval > 0 else {
-                call.reject("[CapacitorCalendar.\(#function)] Interval must be greater than 0 when using recurrence")
+                CapacitorCalendarError.reject(call, type: .invalidKey, source: #function, data: "interval, must be greater than 0 when using recurrence")
                 return
             }
 
             let end = recurrenceData["end"] as? Double
-
             recurrence = RecurrenceParameters(frequency: frequency, interval: interval, end: end)
         }
 
@@ -277,112 +423,21 @@ public class CapacitorCalendarPlugin: CAPPlugin {
             recurrence: recurrence
         )
 
-        do {
-            let id = try reminders.createReminder(with: reminderParams)
-            call.resolve(["result": id])
-        } catch {
-            call.reject("[CapacitorCalendar.\(#function)] Unable to create reminder")
-            return
-        }
-    }
-
-    @objc public func openCalendar(_ call: CAPPluginCall) {
-        let interval: Double
-        if let date = call.getDouble("date") {
-            interval = Date(timeIntervalSince1970: date / 1000).timeIntervalSinceReferenceDate
-        } else {
-            interval = Date.timeIntervalSinceReferenceDate
-        }
-
         Task {
-            do {
-                try await calendar.openCalendar(date: interval)
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Unable to open the calendar")
-                return
+            await tryAsyncCall(call, source: #function) {
+                if try callHasAccess(call, entityType: .reminders, accessType: .write, source: #function) {
+                    let id = try await reminders.createReminder(with: reminderParams)
+                    call.resolve(["result": id])
+                }
             }
         }
     }
 
     @objc public func openReminders(_ call: CAPPluginCall) {
         Task {
-            do {
+            await tryAsyncCall(call, source: #function) {
                 try await reminders.openReminders()
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Unable to open reminders")
-                return
             }
-        }
-    }
-
-    @objc public func listEventsInRange(_ call: CAPPluginCall) {
-        guard let startDate = call.getDouble("startDate") else {
-            call.reject("[CapacitorCalendar.\(#function)] A start date was not provided")
-            return
-        }
-        guard let endDate = call.getDouble("endDate") else {
-            call.reject("[CapacitorCalendar.\(#function)] An end date was not provided")
-            return
-        }
-
-        do {
-            try call.resolve(["result": calendar.listEventsInRange(startDate: startDate, endDate: endDate)])
-        } catch {
-            call.reject("[CapacitorCalendar.\(#function)] Could not get the list of events in requested range")
-            return
-        }
-    }
-
-    @objc public func deleteEventsById(_ call: CAPPluginCall) {
-        guard let eventIds = call.getArray("ids") else {
-            call.reject("[CapacitorCalendar.\(#function)] Event ids were not provided")
-            return
-        }
-
-        Task {
-            do {
-                let deleteResult = try await calendar.deleteEventsById(ids: eventIds)
-                call.resolve([
-                    "result": [
-                        "deleted": deleteResult.deleted,
-                        "failed": deleteResult.failed
-                    ]
-                ])
-            } catch {
-                call.reject("[CapacitorCalendar.\(#function)] Could not delete events")
-                return
-            }
-        }
-    }
-
-    @objc public func createCalendar(_ call: CAPPluginCall) {
-        guard let title = call.getString("title") else {
-            call.reject("[CapacitorCalendar.\(#function)] A title for the calendar was not provided")
-            return
-        }
-        let color = call.getString("color")
-
-        do {
-            let id = try calendar.createCalendar(title: title, color: color)
-            call.resolve(["result": id])
-        } catch {
-            call.reject("[CapacitorCalendar.\(#function)] Could not create calendar")
-            return
-        }
-    }
-
-    @objc public func deleteCalendar(_ call: CAPPluginCall) {
-        guard let id = call.getString("id") else {
-            call.reject("[CapacitorCalendar.\(#function)] An id for the calendar to delete should be provided")
-            return
-        }
-
-        do {
-            try calendar.deleteCalendar(id: id)
-            call.resolve()
-        } catch {
-            call.reject("[CapacitorCalendar.\(#function)] Could not delete calendar")
-            return
         }
     }
 }

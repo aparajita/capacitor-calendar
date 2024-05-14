@@ -1,9 +1,11 @@
 import { registerPlugin } from '@capacitor/core';
 import { CalendarChooserDisplayStyle } from './schemas/enums/calendar-chooser-display-style';
 import { CalendarChooserSelectionStyle } from './schemas/enums/calendar-chooser-selection-style';
+import { ErrorType } from './schemas/enums/error-type';
 import { PluginPermission } from './schemas/enums/plugin-permission';
 import { ReminderRecurrenceFrequency } from './schemas/enums/reminder-recurrence-frequency';
 import type { CapacitorCalendarPlugin } from './definitions';
+import type { Access } from './schemas/interfaces/access';
 import type { Calendar } from './schemas/interfaces/calendar';
 import type { RemindersList } from './schemas/interfaces/reminders-list';
 import type { PluginPermissionsMap } from './schemas/interfaces/plugin-permissions-map';
@@ -15,13 +17,14 @@ const CapacitorCalendar = registerPlugin<CapacitorCalendarPlugin>('CapacitorCale
 });
 
 export * from './definitions';
-export type { Calendar, RemindersList, ReminderRecurrenceRule };
+export type { Access, Calendar, RemindersList, ReminderRecurrenceRule };
 export {
+  CalendarEvent,
+  CapacitorCalendar,
   CalendarChooserSelectionStyle,
   CalendarChooserDisplayStyle,
+  ErrorType,
   PluginPermission,
   PluginPermissionsMap,
   ReminderRecurrenceFrequency,
-  CalendarEvent,
-  CapacitorCalendar,
 };
