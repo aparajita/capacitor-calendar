@@ -148,15 +148,10 @@ export class MethodsListComponent {
   }
 
   public async requestFullCalendarAccess(): Promise<void> {
-    const response = await this.tryCall(async () => CapacitorCalendar.requestFullCalendarAccess());
+    const permissions = await this.tryCall(async () => CapacitorCalendar.requestFullCalendarAccess());
 
-    if (response) {
-      this.storeService.updateState({
-        permissions: {
-          readCalendar: response.result,
-          writeCalendar: response.result,
-        },
-      });
+    if (permissions) {
+      this.storeService.updateState({ permissions });
     }
   }
 
