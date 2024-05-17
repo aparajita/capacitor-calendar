@@ -1,15 +1,15 @@
-<p align="center">
+<p style="text-align: center">
   <img src="assets/images/text-logo.png" alt="capacitor-calendar-logo" height="136"/>
   <br>
     <em>
         The Capacitor Calendar Plugin enables full calendar functionality on iOS and Android, with added reminder support for iOS devices.
     </em>
 </p>
-<p align="center">
+<p style="text-align: center">
     <a href="https://capacitor-calendar.pages.dev/"><strong>https://capacitor-calendar.pages.dev</strong></a>
     <br>
 </p>
-<p align="center">
+<p style="text-align: center">
     <a href="documentation.md">Documentation</a>
     ·
     <a href="SECURITY.md#capacitor-compatibility">Capacitor Compatibility</a>
@@ -17,7 +17,7 @@
     <a href="SECURITY.md#deployment-targets">Deployment Targets</a>
     <br>
 </p>
-<p align="center">
+<p style="text-align: center">
     <img src="https://img.shields.io/maintenance/yes/2024?style=flat-square" />
     <a href="https://www.npmjs.com/package/@ebarooni/capacitor-calendar"><img src="https://img.shields.io/npm/l/@ebarooni/capacitor-calendar?style=flat-square" /></a>
     <br>
