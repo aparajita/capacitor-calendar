@@ -63,9 +63,9 @@
     "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
-    "@angular-eslint/eslint-plugin": "^17.4.0",
-    "@angular-eslint/eslint-plugin-template": "^17.4.0",
-    "@angular-eslint/template-parser": "^17.4.0",
+    "@angular-eslint/eslint-plugin": "^17.4.1",
+    "@angular-eslint/eslint-plugin-template": "^17.4.1",
+    "@angular-eslint/template-parser": "^17.4.1",
     "@angular/cli": "^17.3.7",
     "@aparajita/swiftly": "^1.0.4",
     "@capacitor/android": "^6.0.0",

@@ -6,13 +6,13 @@ settings:
 
 devDependencies:
   '@angular-eslint/eslint-plugin':
-    specifier: ^17.4.0
+    specifier: ^17.4.1
     version: 17.4.1(eslint@8.57.0)(typescript@5.4.5)
   '@angular-eslint/eslint-plugin-template':
-    specifier: ^17.4.0
+    specifier: ^17.4.1
     version: 17.4.1(eslint@8.57.0)(typescript@5.4.5)
   '@angular-eslint/template-parser':
-    specifier: ^17.4.0
+    specifier: ^17.4.1
     version: 17.4.1(eslint@8.57.0)(typescript@5.4.5)
   '@angular/cli':
     specifier: ^17.3.7
@@ -610,7 +610,7 @@ packages:
     resolution: {integrity: sha512-q9CRWjpHCMIh5sVyefoD1cA7PkvILqCZsnSOEUUivORLjxCO/Irmue2DprETiNgEqktDBZaM1Bi+jrarx1XdCg==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
-      semver: 7.6.0
+      semver: 7.6.2
     dev: true
 
   /@npmcli/git@5.0.7:
@@ -653,7 +653,7 @@ packages:
       json-parse-even-better-errors: 3.0.2
       normalize-package-data: 6.0.1
       proc-log: 4.2.0
-      semver: 7.6.0
+      semver: 7.6.2
     transitivePeerDependencies:
       - bluebird
     dev: true
@@ -2727,7 +2727,7 @@ packages:
       make-fetch-happen: 13.0.1
       nopt: 7.2.1
       proc-log: 3.0.0
-      semver: 7.6.0
+      semver: 7.6.2
       tar: 6.2.1
       which: 4.0.0
     transitivePeerDependencies:
@@ -2748,7 +2748,7 @@ packages:
     dependencies:
       hosted-git-info: 7.0.2
       is-core-module: 2.13.1
-      semver: 7.6.0
+      semver: 7.6.2
       validate-npm-package-license: 3.0.4
     dev: true
 
