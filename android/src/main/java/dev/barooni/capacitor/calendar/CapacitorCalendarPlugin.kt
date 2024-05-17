@@ -13,6 +13,7 @@ import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
 import com.getcapacitor.annotation.PermissionCallback
+import org.json.JSONObject
 
 @CapacitorPlugin(
     name = "CapacitorCalendar",
@@ -33,11 +34,273 @@ import com.getcapacitor.annotation.PermissionCallback
 )
 class CapacitorCalendarPlugin : Plugin() {
     private var implementation = CapacitorCalendar()
+    private var currentSource = ""
+
+    // Utils
+
+    private fun tryCall(
+        call: PluginCall,
+        source: String,
+        block: () -> Unit,
+    ) {
+        try {
+            block()
+        } catch (error: Exception) {
+            PluginException.reject(call, error, source)
+        }
+    }
+
+    private fun getNonEmptyString(
+        call: PluginCall,
+        param: String,
+        source: String,
+    ): String? {
+        val value = call.getString(param)
+
+        if (value.isNullOrEmpty()) {
+            PluginException.reject(
+                call,
+                PluginException.ErrorType.MISSING_KEY,
+                source,
+                param,
+            )
+            return null
+        } else {
+            return value
+        }
+    }
+
+    // Permissions
+
+    @Throws(PluginException::class)
+    private fun callHasAccess(
+        call: PluginCall,
+        accessType: AccessType,
+        source: String,
+    ): Boolean {
+        val permission =
+            doPermissionCheckForAlias("${accessType.name.lowercase()}Calendar", source)
+
+        if (permission == "granted") {
+            return true
+        } else {
+            PluginException.rejectWithNoAccess(
+                call,
+                EntityType.CALENDAR,
+                accessType,
+                source,
+            )
+            return false
+        }
+    }
+
+    @Throws(PluginException::class)
+    private fun doPermissionCheckForAlias(
+        alias: String,
+        source: String,
+    ): String {
+        return when (alias) {
+            "readCalendar" -> getPermissionState(alias).toString()
+
+            "writeCalendar" -> getPermissionState(alias).toString()
+
+            else -> {
+                throw PluginException(
+                    PluginException.ErrorType.INTERNAL_ERROR,
+                    source,
+                    alias,
+                )
+            }
+        }
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun checkPermission(call: PluginCall) {
+        val source = ::checkPermission.name
+
+        tryCall(call, source) {
+            val permissionName =
+                getNonEmptyString(call, "alias", source)
+                    ?: return@tryCall
+
+            if (permissionName == "readCalendar" || permissionName == "writeCalendar") {
+                call.resolve(JSObject().put("result", getPermissionState(permissionName)))
+            } else {
+                PluginException.reject(
+                    call,
+                    PluginException.ErrorType.INVALID_KEY,
+                    source,
+                    permissionName,
+                )
+            }
+        }
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun checkAllPermissions(call: PluginCall) {
+        tryCall(call, ::checkAllPermissions.name) {
+            return@tryCall checkPermissions(call)
+        }
+    }
+
+    private fun doRequestPermission(
+        call: PluginCall,
+        alias: String,
+        source: String,
+    ) {
+        tryCall(call, source) {
+            currentSource = source
+            call.data.put("alias", alias)
+            return@tryCall requestPermissionForAlias(
+                alias,
+                call,
+                "requestPermissionCallback",
+            )
+        }
+    }
+
+    @Throws(PluginException::class)
+    @PermissionCallback
+    private fun requestPermissionCallback(call: PluginCall?) {
+        if (call == null) {
+            throw PluginException(
+                PluginException.ErrorType.INTERNAL_ERROR,
+                "CapacitorCalendar.$currentSource",
+                "Call is not defined",
+            )
+        }
+
+        val permissionName = call.getString("alias")
+
+        tryCall(call, currentSource) {
+            call.resolve(JSObject().put("result", getPermissionState(permissionName)))
+        }
+    }
+
+    @Deprecated("Use specific request<type>Permission instead")
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun requestPermission(call: PluginCall) {
+        val source = ::requestPermission.name
+        val alias =
+            getNonEmptyString(call, "alias", source)
+                ?: return
+
+        doRequestPermission(call, alias, source)
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun requestAllPermissions(call: PluginCall) {
+        tryCall(call, "CapacitorCalendar.requestAllPermissions") {
+            super.requestPermissions(call)
+        }
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun requestReadOnlyCalendarAccess(call: PluginCall) {
+        doRequestPermission(
+            call,
+            "readCalendar",
+            ::requestReadOnlyCalendarAccess.name,
+        )
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun requestWriteOnlyCalendarAccess(call: PluginCall) {
+        doRequestPermission(
+            call,
+            "writeCalendar",
+            ::requestReadOnlyCalendarAccess.name,
+        )
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun requestFullCalendarAccess(call: PluginCall) {
+        requestAllPermissions(call)
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun requestFullRemindersAccess(call: PluginCall) {
+        PluginException.unimplemented(call, ::requestFullRemindersAccess.name)
+    }
+
+    // Calendars
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun selectCalendarsWithPrompt(call: PluginCall) {
+        PluginException.unimplemented(call, ::selectCalendarsWithPrompt.name)
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun listCalendars(call: PluginCall) {
+        val source = ::listCalendars.name
+
+        tryCall(call, source) {
+            if (!callHasAccess(call, AccessType.READ, source)) {
+                return@tryCall
+            }
+
+            val rawAccess = call.getInt("access") ?: CapacitorCalendar.AccessMode.ALL.ordinal
+            val access = CapacitorCalendar.AccessMode.fromInt(rawAccess)
+            val calendars = implementation.listCalendars(context, access)
+            call.resolve(JSObject().put("result", calendars))
+        }
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun getDefaultCalendar(call: PluginCall) {
+        val source = ::getDefaultCalendar.name
+
+        tryCall(call, source) {
+            if (callHasAccess(
+                    call,
+                    AccessType.READ,
+                    source,
+                )
+            ) {
+                val primaryCalendar = implementation.getDefaultCalendar(context)
+                call.resolve(JSObject().put("result", primaryCalendar ?: JSONObject.NULL))
+            }
+        }
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun createCalendar(call: PluginCall) {
+        PluginException.unimplemented(call, ::createCalendar.name)
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun deleteCalendar(call: PluginCall) {
+        PluginException.unimplemented(call, ::deleteCalendar.name)
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    fun openCalendar(call: PluginCall) {
+        val timestamp = call.getLong("date") ?: System.currentTimeMillis()
+
+        try {
+            return activity.startActivity(implementation.openCalendar(timestamp))
+        } catch (error: Exception) {
+            call.reject("", "[CapacitorCalendar.${::openCalendar.name}] Unable to open calendar")
+        }
+    }
+
+    // Events
 
     @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
     fun createEventWithPrompt(call: PluginCall) {
-        try {
-            implementation.eventIdsArray = implementation.fetchCalendarEventIDs(context)
+        val source = ::createEventWithPrompt.name
+
+        tryCall(call, source) {
+            if (!callHasAccess(
+                    call,
+                    AccessType.WRITE,
+                    source,
+                )
+            ) {
+                return@tryCall
+            }
+
+            implementation.fetchCalendarEventIDs(context)
 
             val title = call.getString("title", "")
             val calendarId = call.getString("calendarId")
@@ -53,142 +316,54 @@ class CapacitorCalendarPlugin : Plugin() {
             location?.let { intent.putExtra(CalendarContract.Events.EVENT_LOCATION, it) }
             startDate?.let { intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, it) }
             endDate?.let { intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME, it) }
-            isAllDay?.let { intent.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, if (it) 1 else 0) }
+            isAllDay?.let {
+                intent.putExtra(
+                    CalendarContract.EXTRA_EVENT_ALL_DAY,
+                    if (it) 1 else 0,
+                )
+            }
 
-            return startActivityForResult(
+            return@tryCall startActivityForResult(
                 call,
                 intent,
                 "openCalendarIntentActivityCallback",
             )
-        } catch (error: Exception) {
-            call.reject("", "[CapacitorCalendar.${::openCalendarIntentActivityCallback.name}] Could not create the event")
-            return
         }
     }
 
+    @Throws(PluginException::class)
     @ActivityCallback
     private fun openCalendarIntentActivityCallback(
         call: PluginCall?,
         result: ActivityResult,
     ) {
         if (call == null) {
-            throw Exception("[CapacitorCalendar.${::createEventWithPrompt.name}] Call is not defined")
+            throw PluginException(
+                PluginException.ErrorType.INTERNAL_ERROR,
+                "CapacitorCalendar.${::createEventWithPrompt.name}",
+                "call is not defined",
+            )
         }
 
-        val newEventIds = implementation.getNewEventIds(implementation.fetchCalendarEventIDs(context))
+        val newEventIds =
+            implementation.getNewEventIds(implementation.fetchCalendarEventIDs(context))
         val newIdsArray = JSArray()
         newEventIds.forEach { id -> newIdsArray.put(id.toString()) }
-
-        val ret = JSObject()
-        ret.put("result", newIdsArray)
-        call.resolve(ret)
-    }
-
-    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun checkPermission(call: PluginCall) {
-        try {
-            val permissionName =
-                call.getString("alias")
-                    ?: throw Exception("[CapacitorCalendar.${::checkPermission.name}] Permission name is not defined")
-            val permissionState =
-                getPermissionState(permissionName)
-                    ?: throw Exception(
-                        "[CapacitorCalendar.${::checkPermission.name}] Could not determine the status of the requested permission",
-                    )
-            val ret = JSObject()
-            ret.put("result", permissionState)
-            call.resolve(ret)
-        } catch (error: Exception) {
-            call.reject("", error.message)
-            return
-        }
-    }
-
-    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun checkAllPermissions(call: PluginCall) {
-        try {
-            return checkPermissions(call)
-        } catch (_: Exception) {
-            call.reject("", "[CapacitorCalendar.${::checkAllPermissions.name}] Could not determine the status of the requested permissions")
-            return
-        }
-    }
-
-    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun requestPermission(call: PluginCall) {
-        try {
-            val alias =
-                call.getString("alias")
-                    ?: throw Exception("[CapacitorCalendar.${::requestPermission.name}] Permission name is not defined")
-            return requestPermissionForAlias(
-                alias,
-                call,
-                "requestPermissionCallback",
-            )
-        } catch (error: Exception) {
-            call.reject("", error.message)
-            return
-        }
-    }
-
-    @PermissionCallback
-    private fun requestPermissionCallback(call: PluginCall) {
-        val permissionName = call.getString("alias")
-        try {
-            val ret = JSObject()
-            ret.put("result", getPermissionState(permissionName))
-            call.resolve(ret)
-        } catch (_: Exception) {
-            throw Exception("${::requestPermissionCallback.name} Could not authorize $permissionName")
-        }
-    }
-
-    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun requestAllPermissions(call: PluginCall) {
-        try {
-            return requestPermissions(call)
-        } catch (_: Exception) {
-            call.reject("", "[CapacitorCalendar.requestAllPermissions] Could not request permissions")
-            return
-        }
-    }
-
-    @PluginMethod
-    fun selectCalendarsWithPrompt(call: PluginCall) {
-        call.unimplemented("[CapacitorCalendar.${::selectCalendarsWithPrompt.name}] Not implemented on Android")
-        return
-    }
-
-    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun listCalendars(call: PluginCall) {
-        try {
-            val calendars = implementation.listCalendars(context)
-            val ret = JSObject()
-            ret.put("result", calendars)
-            call.resolve(ret)
-        } catch (_: Exception) {
-            call.reject("", "[CapacitorCalendar.${::listCalendars.name}] Failed to get the list of calendars")
-        }
-    }
-
-    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun getDefaultCalendar(call: PluginCall) {
-        try {
-            val primaryCalendar = implementation.getDefaultCalendar(context)
-            val ret = JSObject()
-            ret.put("result", primaryCalendar)
-            call.resolve(ret)
-        } catch (_: Exception) {
-            call.reject("", "[CapacitorCalendar.${::getDefaultCalendar.name}] No default calendar found")
-        }
+        call.resolve(JSObject().put("result", newIdsArray))
     }
 
     @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
     fun createEvent(call: PluginCall) {
-        try {
+        val source = ::createEvent.name
+
+        tryCall(call, source) {
+            if (!callHasAccess(call, AccessType.WRITE, source)) {
+                return@tryCall
+            }
+
             val title =
-                call.getString("title")
-                    ?: throw Exception("[CapacitorCalendar.${::createEvent.name}] A title for the event was not provided")
+                getNonEmptyString(call, "title", source)
+                    ?: return@tryCall
             val calendarId = call.getString("calendarId")
             val location = call.getString("location")
             val startDate = call.getLong("startDate")
@@ -208,87 +383,95 @@ class CapacitorCalendarPlugin : Plugin() {
                     alertOffsetInMinutes,
                 )
 
-            val id = eventUri?.lastPathSegment ?: throw IllegalArgumentException("Failed to insert event into calendar")
-            val ret = JSObject()
-            ret.put("result", id)
-            call.resolve(ret)
-        } catch (error: Exception) {
-            call.reject("", "[CapacitorCalendar.${::createEvent.name}] Unable to create event")
-            return
-        }
-    }
-
-    @PluginMethod
-    fun getDefaultRemindersList(call: PluginCall) {
-        call.unimplemented("[CapacitorCalendar.${::getDefaultRemindersList.name}] Not implemented on Android")
-        return
-    }
-
-    @PluginMethod
-    fun getRemindersLists(call: PluginCall) {
-        call.unimplemented("[CapacitorCalendar.${::getRemindersLists.name}] Not implemented on Android")
-        return
-    }
-
-    @PluginMethod
-    fun createReminder(call: PluginCall) {
-        call.unimplemented("[CapacitorCalendar.${::createReminder.name}] Not implemented on Android")
-        return
-    }
-
-    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
-    fun openCalendar(call: PluginCall) {
-        val timestamp = call.getLong("date") ?: System.currentTimeMillis()
-        try {
-            return activity.startActivity(implementation.openCalendar(timestamp))
-        } catch (error: Exception) {
-            call.reject("", "[CapacitorCalendar.${::openCalendar.name}] Unable to open calendar")
-            return
+            val id =
+                eventUri?.lastPathSegment
+                    ?: throw PluginException(
+                        PluginException.ErrorType.OS_ERROR,
+                        source,
+                        "Failed to insert event into calendar",
+                    )
+            call.resolve(JSObject().put("result", id))
         }
     }
 
     @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
     fun listEventsInRange(call: PluginCall) {
-        try {
+        val source = ::listEventsInRange.name
+
+        tryCall(call, source) {
+            if (!callHasAccess(
+                    call,
+                    AccessType.READ,
+                    source,
+                )
+            ) {
+                return@tryCall
+            }
+
             val startDate =
                 call.getLong("startDate")
-                    ?: throw Exception("[CapacitorCalendar.${::listEventsInRange.name}] A start date was not provided")
+                    ?: throw PluginException(
+                        PluginException.ErrorType.MISSING_KEY,
+                        source,
+                        "startDate",
+                    )
             val endDate =
                 call.getLong("endDate")
-                    ?: throw Exception("[CapacitorCalendar.${::listEventsInRange.name}] An end date was not provided")
+                    ?: throw PluginException(
+                        PluginException.ErrorType.MISSING_KEY,
+                        source,
+                        "endDate",
+                    )
             val ret = JSObject()
             ret.put("result", implementation.listEventsInRange(context, startDate, endDate))
             call.resolve(ret)
-        } catch (error: Exception) {
-            call.reject("", "[CapacitorCalendar.${::listEventsInRange.name}] Could not get the list of events in requested range")
-            return
         }
     }
 
     @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
     fun deleteEventsById(call: PluginCall) {
-        try {
+        val source = ::deleteEventsById.name
+
+        tryCall(call, source) {
+            if (!callHasAccess(
+                    call,
+                    AccessType.WRITE,
+                    source,
+                )
+            ) {
+                return@tryCall
+            }
+
             val ids =
                 call.getArray("ids")
-                    ?: throw Exception("[CapacitorCalendar.${::deleteEventsById.name}] Event ids were not provided")
-            val ret = JSObject()
-            ret.put("result", implementation.deleteEventsById(context, ids))
-            call.resolve(ret)
-        } catch (error: Exception) {
-            call.reject("", "[CapacitorCalendar.${::deleteEventsById.name}] Could not delete events")
-            return
+                    ?: throw PluginException(
+                        PluginException.ErrorType.MISSING_KEY,
+                        source,
+                        "ids",
+                    )
+            call.resolve(JSObject().put("result", implementation.deleteEventsById(context, ids)))
         }
     }
 
+    // Reminders
+
     @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun createCalendar(call: PluginCall) {
-        call.unimplemented("[CapacitorCalendar.${::createCalendar.name}] Not implemented on Android")
-        return
+    fun getDefaultRemindersList(call: PluginCall) {
+        PluginException.unimplemented(call, ::getDefaultRemindersList.name)
     }
 
     @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
-    fun deleteCalendar(call: PluginCall) {
-        call.unimplemented("[CapacitorCalendar.${::deleteCalendar.name}] Not implemented on Android")
-        return
+    fun getRemindersLists(call: PluginCall) {
+        PluginException.unimplemented(call, ::getRemindersLists.name)
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun createReminder(call: PluginCall) {
+        PluginException.unimplemented(call, ::createReminder.name)
+    }
+
+    @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
+    fun openReminders(call: PluginCall) {
+        PluginException.unimplemented(call, ::openReminders.name)
     }
 }
