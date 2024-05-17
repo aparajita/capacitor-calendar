@@ -10,7 +10,6 @@ opt_in_rules:
   - modifier_order
   - overridden_super_call
   - unowned_variable_capture
-  - unused_import
 
 line_length:
   warning: 150
