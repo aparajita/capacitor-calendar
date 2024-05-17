@@ -77,6 +77,8 @@ export class MethodsListComponent {
       return response;
     } catch (error) {
       if (error instanceof CapacitorException) {
+        this.storeService.dispatchLog(`${error.message} (${error.data?.['type']})`, true);
+      } else {
         this.storeService.dispatchLog(JSON.stringify(error, null, 2), true);
       }
 
