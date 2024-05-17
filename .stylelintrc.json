@@ -1,11 +1,10 @@
 {
-  "ignoreFiles": [
-    "example/(ios|android)/**/*.(css|scss)"
-  ],
+  "ignoreFiles": ["example/(ios|android)/**/*.(css|scss)"],
   "overrides": [
     {
       "files": ["example/**/*.(css|scss)"],
       "extends": ["stylelint-prettier/recommended"]
     }
-  ]
+  ],
+  "rules": {}
 }
