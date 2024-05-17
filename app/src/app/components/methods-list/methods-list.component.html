@@ -8,11 +8,13 @@
   <ion-item button [detail]="true" (click)="checkAllPermissions()">
     <ion-label>{{ checkAllPermissions.name }}</ion-label>
   </ion-item>
-  @if (Capacitor.getPlatform() === "android") {
-    <ion-item button [detail]="true" (click)="requestReadOnlyCalendarAccess()">
-      <ion-label>{{ requestReadOnlyCalendarAccess.name }}</ion-label>
-    </ion-item>
-  }
+  <ion-item button [detail]="true" (click)="requestReadOnlyCalendarAccess()">
+    <ion-label>
+      <span>{{ requestReadOnlyCalendarAccess.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">Android only</span>
+    </ion-label>
+  </ion-item>
   <ion-item button [detail]="true" (click)="requestWriteOnlyCalendarAccess()">
     <ion-label>{{ requestWriteOnlyCalendarAccess.name }}</ion-label>
   </ion-item>
@@ -20,7 +22,11 @@
     <ion-label>{{ requestFullCalendarAccess.name }}</ion-label>
   </ion-item>
   <ion-item button [detail]="true" (click)="requestFullRemindersAccess()">
-    <ion-label>{{ requestFullRemindersAccess.name }}</ion-label>
+    <ion-label>
+      <span>{{ requestFullRemindersAccess.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
   </ion-item>
   <ion-item button [detail]="true" (click)="requestAllPermissions()">
     <ion-label>{{ requestAllPermissions.name }}</ion-label>
@@ -38,17 +44,27 @@
   <ion-item button [detail]="true" (click)="getDefaultCalendar()">
     <ion-label>{{ getDefaultCalendar.name }}</ion-label>
   </ion-item>
-  @if (Capacitor.getPlatform() === "ios") {
-    <ion-item button [detail]="true" (click)="calendarChooserIsOpen = true">
-      <ion-label>{{ selectCalendarsWithPrompt.name }}</ion-label>
-    </ion-item>
-    <ion-item button [detail]="true" (click)="createCalendar()">
-      <ion-label>{{ createCalendar.name }}</ion-label>
-    </ion-item>
-    <ion-item button [detail]="true" (click)="deleteCalendar()">
-      <ion-label>{{ deleteCalendar.name }}</ion-label>
-    </ion-item>
-  }
+  <ion-item button [detail]="true" (click)="calendarChooserIsOpen = true">
+    <ion-label>
+      <span>{{ selectCalendarsWithPrompt.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
+  </ion-item>
+  <ion-item button [detail]="true" (click)="createCalendar()">
+    <ion-label>
+      <span>{{ createCalendar.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
+  </ion-item>
+  <ion-item button [detail]="true" (click)="deleteCalendar()">
+    <ion-label>
+      <span>{{ deleteCalendar.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
+  </ion-item>
   <ion-item button [detail]="true" (click)="openCalendar()">
     <ion-label>{{ openCalendar.name }}</ion-label>
   </ion-item>
@@ -73,23 +89,36 @@
     <ion-label>{{ deleteEventsById.name }}</ion-label>
   </ion-item>
 
-  @if (Capacitor.getPlatform() === "ios") {
-    <ion-list-header>
-      <ion-label>Reminders</ion-label>
-    </ion-list-header>
-    <ion-item button [detail]="true" (click)="createReminder()">
-      <ion-label>{{ createReminder.name }}</ion-label>
-    </ion-item>
-    <ion-item button [detail]="true" (click)="getRemindersLists()">
-      <ion-label>{{ getRemindersLists.name }}</ion-label>
-    </ion-item>
-    <ion-item button [detail]="true" (click)="getDefaultRemindersList()">
-      <ion-label>{{ getDefaultRemindersList.name }}</ion-label>
-    </ion-item>
-    <ion-item button [detail]="true" (click)="openReminders()">
-      <ion-label>{{ openReminders.name }}</ion-label>
-    </ion-item>
-  }
+  <ion-list-header>
+    <ion-label>Reminders</ion-label>
+  </ion-list-header>
+  <ion-item button [detail]="true" (click)="createReminder()">
+    <ion-label>
+      <span>{{ createReminder.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
+  </ion-item>
+  <ion-item button [detail]="true" (click)="getRemindersLists()">
+    <ion-label>
+      <span>{{ getRemindersLists.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
+  </ion-item>
+  <ion-item button [detail]="true" (click)="getDefaultRemindersList()">
+    <ion-label>
+      <span>{{ getDefaultRemindersList.name }}</span>
+      <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
+  </ion-item>
+  <ion-item button [detail]="true" (click)="openReminders()">
+    <ion-label>
+      <span>{{ openReminders.name }}</span> <br />
+      <span style="color: var(--ion-color-medium)">iOS only</span>
+    </ion-label>
+  </ion-item>
 </ion-list>
 
 <ion-modal
@@ -101,13 +130,13 @@
     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-button (click)="calendarChooserModal.dismiss(null, 'cancel')"
-          >Cancel</ion-button
-        >
+          >Cancel
+        </ion-button>
       </ion-buttons>
       <ion-buttons slot="end">
         <ion-button (click)="calendarChooserModal.dismiss(null, 'confirm')"
-          >Select</ion-button
-        >
+          >Select
+        </ion-button>
       </ion-buttons>
     </ion-toolbar>
     <ion-picker>
@@ -116,12 +145,12 @@
         (ionChange)="onSelectionStyleDidChange($event.detail.value)"
       >
         <ion-picker-column-option [value]="CalendarChooserSelectionStyle.SINGLE"
-          >Single</ion-picker-column-option
-        >
+          >Single
+        </ion-picker-column-option>
         <ion-picker-column-option
           [value]="CalendarChooserSelectionStyle.MULTIPLE"
-          >Multiple</ion-picker-column-option
-        >
+          >Multiple
+        </ion-picker-column-option>
       </ion-picker-column>
       <ion-picker-column
         [value]="displayStyle"
@@ -129,12 +158,12 @@
       >
         <ion-picker-column-option
           [value]="CalendarChooserDisplayStyle.ALL_CALENDARS"
-          >All calendars</ion-picker-column-option
-        >
+          >All calendars
+        </ion-picker-column-option>
         <ion-picker-column-option
           [value]="CalendarChooserDisplayStyle.WRITABLE_CALENDARS_ONLY"
-          >Writeable only</ion-picker-column-option
-        >
+          >Writeable only
+        </ion-picker-column-option>
       </ion-picker-column>
     </ion-picker>
   </ng-template>
@@ -149,13 +178,13 @@
     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-button (click)="permissionChooserModal.dismiss(null, 'cancel')"
-          >Cancel</ion-button
-        >
+          >Cancel
+        </ion-button>
       </ion-buttons>
       <ion-buttons slot="end">
         <ion-button (click)="permissionChooserModal.dismiss(null, 'confirm')"
-          >Select</ion-button
-        >
+          >Select
+        </ion-button>
       </ion-buttons>
     </ion-toolbar>
     <ion-picker>
@@ -164,17 +193,19 @@
         (ionChange)="onPermissionDidChange($event.detail.value)"
       >
         <ion-picker-column-option [value]="PluginPermission.READ_CALENDAR"
-          >readCalendar</ion-picker-column-option
-        >
+          >readCalendar
+        </ion-picker-column-option>
         <ion-picker-column-option [value]="PluginPermission.WRITE_CALENDAR"
-          >writeCalendar</ion-picker-column-option
-        >
-        <ion-picker-column-option [value]="PluginPermission.READ_REMINDERS"
-          >readReminders</ion-picker-column-option
-        >
-        <ion-picker-column-option [value]="PluginPermission.WRITE_REMINDERS"
-          >writeReminders</ion-picker-column-option
-        >
+          >writeCalendar
+        </ion-picker-column-option>
+        @if (Capacitor.getPlatform() === "ios") {
+          <ion-picker-column-option [value]="PluginPermission.READ_REMINDERS"
+            >readReminders
+          </ion-picker-column-option>
+          <ion-picker-column-option [value]="PluginPermission.WRITE_REMINDERS"
+            >writeReminders
+          </ion-picker-column-option>
+        }
       </ion-picker-column>
     </ion-picker>
   </ng-template>
