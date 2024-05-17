@@ -1,5 +1,5 @@
 //
-//  CapacitorCalendarBase.swift
+//  CalendarBase.swift
 //  EbarooniCapacitorCalendar
 //
 //  Created by Aparajita on 5/9/24.
@@ -10,15 +10,15 @@ import EventKitUI
 import Foundation
 
 public class CapacitorCalendarBase: NSObject {
-    internal let bridge: (any CAPBridgeProtocol)?
-    internal let eventStore: EKEventStore
+    let bridge: (any CAPBridgeProtocol)?
+    let eventStore: EKEventStore
 
     init(bridge: (any CAPBridgeProtocol)?, eventStore: EKEventStore) {
         self.bridge = bridge
         self.eventStore = eventStore
     }
 
-    internal func checkAllPermissions(entity: EKEntityType, source: String) -> [String: String] {
+    func checkAllPermissions(entity: EKEntityType, source _: String) -> [String: String] {
         let read: PermissionState
         let write: PermissionState
         let status = EKEventStore.authorizationStatus(for: entity)
@@ -54,7 +54,7 @@ public class CapacitorCalendarBase: NSObject {
     }
 
     @MainActor
-    internal func requestFullAccessTo(_ entity: EKEntityType, source: String) async throws -> String {
+    func requestFullAccessTo(_ entity: EKEntityType, source: String) async throws -> String {
         do {
             var granted: Bool
 
@@ -70,11 +70,11 @@ public class CapacitorCalendarBase: NSObject {
 
             return granted ? PermissionState.granted.rawValue : PermissionState.denied.rawValue
         } catch {
-            throw CapacitorCalendarError(fromError: error, source: source)
+            throw PluginError(fromError: error, source: source)
         }
     }
 
-    internal func getDefaultCalendar(for entity: EKEntityType, source: String) -> [String: Any]? {
+    func getDefaultCalendar(for entity: EKEntityType, source _: String) -> [String: Any]? {
         if let defaultCalendar = entity == .event ? eventStore.defaultCalendarForNewEvents : eventStore.defaultCalendarForNewReminders() {
             return [
                 "id": defaultCalendar.calendarIdentifier,
@@ -86,7 +86,7 @@ public class CapacitorCalendarBase: NSObject {
         }
     }
 
-    internal func calendarsToDicts(_ calendars: Set<EKCalendar>) -> [[String: Any]] {
+    func calendarsToDicts(_ calendars: Set<EKCalendar>) -> [[String: Any]] {
         var result: [[String: Any]] = []
 
         for calendar in calendars {
@@ -102,7 +102,7 @@ public class CapacitorCalendarBase: NSObject {
     }
 
     @MainActor
-    internal func open(_ url: URL?, errorType: CapacitorCalendarError.ErrorType, source: String) async throws {
+    func open(_ url: URL?, errorType: PluginError.ErrorType, source: String) async throws {
         var success = false
 
         if let url = url {
@@ -110,7 +110,7 @@ public class CapacitorCalendarBase: NSObject {
         }
 
         if !success {
-            throw CapacitorCalendarError(errorType, source: source)
+            throw PluginError(errorType, source: source)
         }
     }
 }

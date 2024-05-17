@@ -1,15 +1,15 @@
 //
-//  CapacitorCalendarError.swift
+//  PluginError.swift
 //  EbarooniCapacitorCalendar
 //
 //  Created by Aparajita on 5/8/24.
 //
 
 import Capacitor
-import Foundation
 import EventKit
+import Foundation
 
-public class CapacitorCalendarError: Error {
+public class PluginError: Error {
     enum ErrorType: String {
         case missingKey
         case invalidKey
@@ -20,6 +20,7 @@ public class CapacitorCalendarError: Error {
         case unableToOpenReminders
         case noViewController
         case osError
+        case unimplemented
         case internalError
         case unknownError
     }
@@ -34,6 +35,7 @@ public class CapacitorCalendarError: Error {
         .unableToOpenReminders: "The reminders app could not be opened",
         .noViewController: "View controller could not be created",
         .osError: "An iOS error has occurred",
+        .unimplemented: "Not implemented on iOS",
         .unknownError: "An unknown error occurred"
     ]
 
@@ -47,23 +49,23 @@ public class CapacitorCalendarError: Error {
     init(_ type: ErrorType, source: String, data: String? = nil) {
         self.type = type.rawValue
 
-        if let msg = CapacitorCalendarError.errorMessages[type] {
-            self.message = msg
+        if let msg = PluginError.errorMessages[type] {
+            message = msg
 
             switch type {
             case .missingKey, .invalidKey:
                 if let data = data {
-                    self.message = "\(msg) \(data)"
+                    message = "\(msg) \(data)"
                 }
 
             case .noAccess:
                 if let data = data {
-                    self.message = "\(msg) (\(data))"
+                    message = "\(msg) (\(data))"
                 }
 
             case .internalError, .osError, .unknownError:
                 if let data = data {
-                    self.message = "\(msg): \(data)"
+                    message = "\(msg): \(data)"
                 }
 
             default:
@@ -71,10 +73,10 @@ public class CapacitorCalendarError: Error {
             }
         } else {
             // We know this key exists
-            self.message = CapacitorCalendarError.errorMessages[.unknownError]!
+            message = PluginError.errorMessages[.unknownError] ?? "Unknown error"
         }
 
-        self.message = "[CapacitorCalendar.\(source)] \(self.message)"
+        message = "[CapacitorCalendar.\(source)] \(message)"
     }
 
     func reject(_ call: CAPPluginCall) {
@@ -82,7 +84,7 @@ public class CapacitorCalendarError: Error {
     }
 
     static func reject(_ call: CAPPluginCall, error: Error, source: String) {
-        if let error = error as? CapacitorCalendarError {
+        if let error = error as? PluginError {
             error.reject(call)
         } else {
             reject(call, type: .osError, source: source, data: error.localizedDescription)
@@ -90,14 +92,18 @@ public class CapacitorCalendarError: Error {
     }
 
     static func reject(_ call: CAPPluginCall, type: ErrorType, source: String, data: String? = nil) {
-        CapacitorCalendarError(type, source: source, data: data).reject(call)
+        PluginError(type, source: source, data: data).reject(call)
     }
 
-    static func noAccessForEntity(_ entityType: EntityType, accessType: AccessType, source: String) -> CapacitorCalendarError {
-        return CapacitorCalendarError(.noAccess, source: source, data: "\(entityType)/\(accessType)")
+    static func noAccessForEntity(_ entityType: EntityType, accessType: AccessType, source: String) -> PluginError {
+        PluginError(.noAccess, source: source, data: "\(entityType)/\(accessType)")
     }
 
     static func rejectWithNoAccess(_ call: CAPPluginCall, entityType: EntityType, accessType: AccessType, source: String) {
-        reject(call, type: .noAccess, source: source, data: "\(entityType)/\(accessType)")
+        noAccessForEntity(entityType, accessType: accessType, source: source).reject(call)
+    }
+
+    static func unimplemented(_ call: CAPPluginCall, source: String) {
+        PluginError.reject(call, type: .unimplemented, source: source)
     }
 }

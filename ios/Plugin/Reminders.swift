@@ -1,14 +1,34 @@
 //
-//  CapacitorReminders.swift
+//  Reminders.swift
 //  Plugin
 //
 //  Created by Ehsan Barooni on 15.03.24.
 //  Copyright © 2024 Max Lynch. All rights reserved.
 //
 
-import Foundation
 import EventKit
+import Foundation
 import UIKit
+
+struct ReminderCreationParameters {
+    let title: String
+    let listId: String?
+    let priority: Int?
+    let isCompleted: Bool?
+    let startDate: Double?
+    let dueDate: Double?
+    let completionDate: Double?
+    let notes: String?
+    let url: String?
+    let location: String?
+    let recurrence: RecurrenceParameters?
+}
+
+struct RecurrenceParameters {
+    let frequency: Int
+    let interval: Int
+    let end: Double?
+}
 
 public class CapacitorReminders: CapacitorCalendarBase {
     private let recurrenceFrequencyMapping: [Int: EKRecurrenceFrequency] = [
@@ -20,24 +40,24 @@ public class CapacitorReminders: CapacitorCalendarBase {
 
     // MARK: - Permissions
 
-    public func checkAllPermissions() -> [String: String] {
-        return checkAllPermissions(entity: .reminder, source: #function)
+    func checkAllPermissions() -> [String: String] {
+        checkAllPermissions(entity: .reminder, source: #function)
     }
 
-    public func requestFullAccessToReminders() async throws -> String {
-        return try await requestFullAccessTo(.reminder, source: #function)
+    func requestFullAccessToReminders() async throws -> String {
+        try await requestFullAccessTo(.reminder, source: #function)
     }
 
-    public func getDefaultRemindersList() -> [String: Any]? {
-        return getDefaultCalendar(for: .reminder, source: #function)
+    func getDefaultRemindersList() -> [String: Any]? {
+        getDefaultCalendar(for: .reminder, source: #function)
     }
 
-    public func getRemindersLists() -> [[String: Any]] {
-        return calendarsToDicts(Set(eventStore.calendars(for: .reminder)))
+    func getRemindersLists() -> [[String: Any]] {
+        calendarsToDicts(Set(eventStore.calendars(for: .reminder)))
     }
 
     @MainActor
-    public func createReminder(with parameters: ReminderCreationParameters) throws -> String {
+    func createReminder(with parameters: ReminderCreationParameters) throws -> String {
         let newReminder = EKReminder(eventStore: eventStore)
         initReminder(newReminder, with: parameters)
         newReminder.title = parameters.title
@@ -62,7 +82,7 @@ public class CapacitorReminders: CapacitorCalendarBase {
             try eventStore.save(newReminder, commit: true)
             return newReminder.calendarItemIdentifier
         } catch {
-            throw CapacitorCalendarError(fromError: error, source: #function)
+            throw PluginError(fromError: error, source: #function)
         }
     }
 
@@ -129,7 +149,7 @@ public class CapacitorReminders: CapacitorCalendarBase {
         }
     }
 
-    public func openReminders() async throws {
+    func openReminders() async throws {
         try await open(URL(string: "x-apple-reminderkit://"), errorType: .unableToOpenReminders, source: #function)
     }
 }

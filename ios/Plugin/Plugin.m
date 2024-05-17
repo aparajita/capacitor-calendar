@@ -6,6 +6,7 @@
 CAP_PLUGIN(CapacitorCalendarPlugin, "CapacitorCalendar",
            CAP_PLUGIN_METHOD(checkPermission, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(checkAllPermissions, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(requestReadOnlyCalendarAccess, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(requestWriteOnlyCalendarAccess, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(requestFullCalendarAccess, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(requestFullRemindersAccess, CAPPluginReturnPromise);
