@@ -28,6 +28,7 @@ import { DatePipe, DOCUMENT } from '@angular/common';
     IonModal,
     IonHeader,
     IonToolbar,
+    IonCheckbox,
     IonContent,
     IonList,
     LetDirective,
@@ -56,14 +57,14 @@ export class EventsListViewModalComponent {
 
   constructor(@Inject(DOCUMENT) private readonly document: Document) {}
 
-  present(): Promise<void> {
-    this.loading = true;
+  async present(): Promise<void> {
     if (this.modal) {
-      void this.fetchEvents().finally(() => (this.loading = false));
-      this.modal.presentingElement = this.document.querySelector('app-api.ion-page') ?? undefined;
-      return this.modal.present();
-    } else {
+      this.loading = true;
+      await this.fetchEvents();
       this.loading = false;
+      this.modal.presentingElement = this.document.querySelector('app-api.ion-page') ?? undefined;
+      await this.modal.present();
+    } else {
       throw new Error('Modal not present');
     }
   }
@@ -85,17 +86,20 @@ export class EventsListViewModalComponent {
     this.endDate = undefined;
   }
 
-  private fetchEvents(): Promise<void> {
+  private async fetchEvents(): Promise<void> {
     const now = Date.now();
     const inTwoWeeks = now + 2 * 7 * 24 * 60 * 60 * 1000;
     this.startDate = new Date(now);
     this.endDate = new Date(inTwoWeeks);
 
-    return CapacitorCalendar.listEventsInRange({
-      startDate: now,
-      endDate: now + 2 * 7 * 24 * 60 * 60 * 1000,
-    })
-      .then(({ result }) => this.events$.next(result))
-      .catch((error) => console.warn(error));
+    try {
+      const { result } = await CapacitorCalendar.listEventsInRange({
+        startDate: now,
+        endDate: now + 2 * 7 * 24 * 60 * 60 * 1000,
+      });
+      this.events$.next(result);
+    } catch (error) {
+      console.warn(error);
+    }
   }
 }
