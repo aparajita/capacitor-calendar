@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { IonBadge, IonItem, IonLabel, IonList, IonListHeader, IonSpinner } from '@ionic/angular/standalone';
 import { LetDirective } from '@ngrx/component';
 import { StoreService } from '../../store/store.service';
@@ -11,6 +12,7 @@ import { CapacitorCalendar } from '@ebarooni/capacitor-calendar';
   standalone: true,
 })
 export class PermissionsStatusComponent implements OnInit {
+  readonly Capacitor = Capacitor;
   constructor(readonly storeService: StoreService) {}
 
   ngOnInit() {
