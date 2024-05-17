@@ -39,15 +39,15 @@
 ### Capacitor 6
 
 ```bash
-npm install @ebarooni/capacitor-calendar@latest
-npx cap sync
+pnpm add @ebarooni/capacitor-calendar@latest
+pnpm dlx @capacitor/cli cap sync
 ```
 
 ### Capacitor 5
 
 ```bash
-npm install @ebarooni/capacitor-calendar@^5
-npx cap sync
+pnpm add @ebarooni/capacitor-calendar@^5
+pnpm dlx @capacitor/cli cap sync
 ```
 
 ## [Demo (click for details)](app/README.md)

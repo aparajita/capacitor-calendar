@@ -1,23 +1,15 @@
-# capacitor-calendar-example
-
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.1.2.
-
-## Running the project
+# Demo app
 
 **Install dependencies, Build and sync:**
 
 ```
-npm run build
+pnpm build
 ```
 
-- **iOS**
+**iOS**
 
-  1.  ```
-      npx cap open ios
-      ```
-  2.  Select a team under "Signing and Capabilities"
+- `pnpm dev:ios`
+- Select a team under "Signing and Capabilities"
 
-- **Android**
-  1. ```
-     npx cap open android
-     ```
+**Android**
+- `pnpm dev:android`
