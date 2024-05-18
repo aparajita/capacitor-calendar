@@ -105,7 +105,7 @@ export class MethodsListComponent {
     );
 
     if (response) {
-      const permissionState: PluginPermissionsMap = {};
+      const permissionState: Partial<PluginPermissionsMap> = {};
       permissionState[alias] = response.result;
       this.storeService.updateState({ permissions: permissionState });
     }

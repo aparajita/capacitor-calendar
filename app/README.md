@@ -12,4 +12,5 @@ pnpm build
 - Select a team under "Signing and Capabilities"
 
 **Android**
+
 - `pnpm dev:android`

@@ -6,6 +6,7 @@ import android.provider.CalendarContract
 import androidx.activity.result.ActivityResult
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
+import com.getcapacitor.PermissionState
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
@@ -139,7 +140,21 @@ class CapacitorCalendarPlugin : Plugin() {
     @PluginMethod(returnType = PluginMethod.RETURN_PROMISE)
     fun checkAllPermissions(call: PluginCall) {
         tryCall(call, ::checkAllPermissions.name) {
-            return@tryCall checkPermissions(call)
+            val permissions = super.getPermissionStates()
+            val result = JSObject()
+
+            for ((key, value) in permissions.entries) {
+                result.put(key, value)
+            }
+
+            // Android does not support reminders, but we want to keep the API consistent
+            // with iOS, so add the reminder permissions to the response.
+            result.apply {
+                put("readReminders", PermissionState.DENIED)
+                put("writeReminders", PermissionState.DENIED)
+            }
+
+            call.resolve(result)
         }
     }
 

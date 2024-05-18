@@ -2,31 +2,31 @@
 
 <docgen-index>
 
-* [`checkPermission(...)`](#checkpermission)
-* [`checkAllPermissions()`](#checkallpermissions)
-* [`requestReadOnlyCalendarAccess()`](#requestreadonlycalendaraccess)
-* [`requestWriteOnlyCalendarAccess()`](#requestwriteonlycalendaraccess)
-* [`requestFullCalendarAccess()`](#requestfullcalendaraccess)
-* [`requestFullRemindersAccess()`](#requestfullremindersaccess)
-* [`requestAllPermissions()`](#requestallpermissions)
-* [`requestPermission(...)`](#requestpermission)
-* [`listCalendars(...)`](#listcalendars)
-* [`getDefaultCalendar()`](#getdefaultcalendar)
-* [`selectCalendarsWithPrompt(...)`](#selectcalendarswithprompt)
-* [`createCalendar(...)`](#createcalendar)
-* [`deleteCalendar(...)`](#deletecalendar)
-* [`openCalendar(...)`](#opencalendar)
-* [`createEvent(...)`](#createevent)
-* [`createEventWithPrompt(...)`](#createeventwithprompt)
-* [`listEventsInRange(...)`](#listeventsinrange)
-* [`deleteEventsById(...)`](#deleteeventsbyid)
-* [`createReminder(...)`](#createreminder)
-* [`getDefaultRemindersList()`](#getdefaultreminderslist)
-* [`getRemindersLists()`](#getreminderslists)
-* [`openReminders()`](#openreminders)
-* [Interfaces](#interfaces)
-* [Type Aliases](#type-aliases)
-* [Enums](#enums)
+- [`checkPermission(...)`](#checkpermission)
+- [`checkAllPermissions()`](#checkallpermissions)
+- [`requestReadOnlyCalendarAccess()`](#requestreadonlycalendaraccess)
+- [`requestWriteOnlyCalendarAccess()`](#requestwriteonlycalendaraccess)
+- [`requestFullCalendarAccess()`](#requestfullcalendaraccess)
+- [`requestFullRemindersAccess()`](#requestfullremindersaccess)
+- [`requestAllPermissions()`](#requestallpermissions)
+- [`requestPermission(...)`](#requestpermission)
+- [`listCalendars(...)`](#listcalendars)
+- [`getDefaultCalendar()`](#getdefaultcalendar)
+- [`selectCalendarsWithPrompt(...)`](#selectcalendarswithprompt)
+- [`createCalendar(...)`](#createcalendar)
+- [`deleteCalendar(...)`](#deletecalendar)
+- [`openCalendar(...)`](#opencalendar)
+- [`createEvent(...)`](#createevent)
+- [`createEventWithPrompt(...)`](#createeventwithprompt)
+- [`listEventsInRange(...)`](#listeventsinrange)
+- [`deleteEventsById(...)`](#deleteeventsbyid)
+- [`createReminder(...)`](#createreminder)
+- [`getDefaultRemindersList()`](#getdefaultreminderslist)
+- [`getRemindersLists()`](#getreminderslists)
+- [`openReminders()`](#openreminders)
+- [Interfaces](#interfaces)
+- [Type Aliases](#type-aliases)
+- [Enums](#enums)
 
 </docgen-index>
 
@@ -47,8 +47,7 @@ Checks the current authorization status of a specific permission.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### checkAllPermissions()
 
@@ -62,8 +61,7 @@ Checks the current authorization status of all the required permissions for the 
 
 **Since:** 6.4.0
 
---------------------
-
+---
 
 ### requestReadOnlyCalendarAccess()
 
@@ -78,8 +76,7 @@ not already been granted or denied, the user will be prompted to grant it.
 
 **Since:** 6.4.0
 
---------------------
-
+---
 
 ### requestWriteOnlyCalendarAccess()
 
@@ -96,8 +93,7 @@ Note: On iOS &lt; 17, requesting write-only access is the same as read/write.
 
 **Since:** 6.4.0
 
---------------------
-
+---
 
 ### requestFullCalendarAccess()
 
@@ -112,8 +108,7 @@ been granted or denied, the user will be prompted to grant it.
 
 **Since:** 6.4.0
 
---------------------
-
+---
 
 ### requestFullRemindersAccess()
 
@@ -128,8 +123,7 @@ been granted or denied, the user will be prompted to grant it.
 
 **Since:** 6.4.0
 
---------------------
-
+---
 
 ### requestAllPermissions()
 
@@ -143,8 +137,7 @@ the user will be prompted to grant them.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### requestPermission(...)
 
@@ -161,8 +154,7 @@ If the permission is already granted, it will directly return the status.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### listCalendars(...)
 
@@ -178,8 +170,7 @@ Retrieves a list of calendars available on the device.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### getDefaultCalendar()
 
@@ -191,8 +182,7 @@ Retrieves the default calendar on the device.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### selectCalendarsWithPrompt(...)
 
@@ -210,8 +200,7 @@ selectCalendarsWithPrompt(options: { displayStyle: CalendarChooserDisplayStyle; 
 
 **Since:** 0.2.0
 
---------------------
-
+---
 
 ### createCalendar(...)
 
@@ -229,8 +218,7 @@ createCalendar(options: { title: string; color?: string; }) => any
 
 **Since:** 5.2.0
 
---------------------
-
+---
 
 ### deleteCalendar(...)
 
@@ -248,8 +236,7 @@ deleteCalendar(options: { id: string; }) => any
 
 **Since:** 5.2.0
 
---------------------
-
+---
 
 ### openCalendar(...)
 
@@ -266,8 +253,7 @@ The calendar will open to today's date if no date is provided.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### createEvent(...)
 
@@ -283,8 +269,7 @@ Creates an event with the provided options.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### createEventWithPrompt(...)
 
@@ -303,8 +288,7 @@ On iOS opens a native sheet and on Android opens an intent.
 
 **Since:** 0.1.0
 
---------------------
-
+---
 
 ### listEventsInRange(...)
 
@@ -322,8 +306,7 @@ Retrieves a list of calendar events present in the given date range.
 
 **Since:** 0.10.0
 
---------------------
-
+---
 
 ### deleteEventsById(...)
 
@@ -341,8 +324,7 @@ Deletes events from the calendar given their IDs.
 
 **Since:** 0.11.0
 
---------------------
-
+---
 
 ### createReminder(...)
 
@@ -360,8 +342,7 @@ createReminder(options: { title: string; listId?: string; priority?: number; isC
 
 **Since:** 0.5.0
 
---------------------
-
+---
 
 ### getDefaultRemindersList()
 
@@ -373,8 +354,7 @@ getDefaultRemindersList() => any
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### getRemindersLists()
 
@@ -386,8 +366,7 @@ getRemindersLists() => any
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### openReminders()
 
@@ -400,11 +379,9 @@ The calendar will open to today's date if no date is provided.
 
 **Returns:** <code>any</code>
 
---------------------
-
+---
 
 ### Interfaces
-
 
 #### Calendar
 
@@ -415,7 +392,6 @@ Represents a calendar object.
 | **`id`**       | <code>string</code>  |
 | **`title`**    | <code>string</code>  |
 | **`writable`** | <code>boolean</code> |
-
 
 #### CalendarEvent
 
@@ -437,7 +413,6 @@ Represents an event in the calendar.
 | **`isAllDay`**         | <code>boolean</code> |
 | **`calendarId`**       | <code>string</code>  |
 
-
 #### ReminderRecurrenceRule
 
 | Prop            | Type                                                                                | Description                                                                                             |
@@ -446,30 +421,26 @@ Represents an event in the calendar.
 | **`interval`**  | <code>number</code>                                                                 | The interval should be a number greater than 0. For values lower than 1 the method will throw an error. |
 | **`end`**       | <code>number</code>                                                                 | When provided, the reminder will stop repeating at the given time.                                      |
 
-
 #### RemindersList
 
-
 ### Type Aliases
-
 
 #### PermissionState
 
 <code>'prompt' | 'prompt-with-rationale' | 'granted' | 'denied'</code>
 
-
 #### PluginPermissionsMap
 
-<code>Partial&lt;Record&lt;<a href="#pluginpermission">PluginPermission</a>, <a href="#permissionstate">PermissionState</a>&gt;&gt;</code>
-
+<code>
+  Record&lt;<a href="#pluginpermission">PluginPermission</a>,{" "}
+  <a href="#permissionstate">PermissionState</a>&gt;
+</code>
 
 #### Access
 
 <code>'granted' | 'denied'</code>
 
-
 ### Enums
-
 
 #### PluginPermission
 
@@ -480,7 +451,6 @@ Represents an event in the calendar.
 | **`READ_REMINDERS`**  | <code>'readReminders'</code>  | Represents the permission state for reading reminders. |
 | **`WRITE_REMINDERS`** | <code>'writeReminders'</code> | Represents the permission state for writing reminders. |
 
-
 #### CalendarChooserDisplayStyle
 
 | Members                       | Description                                              |
@@ -488,14 +458,12 @@ Represents an event in the calendar.
 | **`ALL_CALENDARS`**           | Display all calendars available for selection.           |
 | **`WRITABLE_CALENDARS_ONLY`** | Display only writable calendars available for selection. |
 
-
 #### CalendarChooserSelectionStyle
 
 | Members        | Description                                             |
 | -------------- | ------------------------------------------------------- |
 | **`SINGLE`**   | Allows only a single selection in the calendar chooser. |
 | **`MULTIPLE`** | Allows multiple selections in the calendar chooser.     |
-
 
 #### ReminderRecurrenceFrequency
 
