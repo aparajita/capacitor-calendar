@@ -1,4 +1,4 @@
-import { Component, NgZone } from '@angular/core';
+import { Component } from '@angular/core';
 import {
   IonButton,
   IonButtons,
@@ -57,10 +57,7 @@ export class MethodsListComponent {
   public permissionChooserIsOpen = false;
   public permissionToCheck: PluginPermission = PluginPermission.READ_CALENDAR;
 
-  constructor(
-    private readonly storeService: StoreService,
-    private readonly zone: NgZone
-  ) {}
+  constructor(private readonly storeService: StoreService) {}
 
   private async tryCall<T>(call: () => Promise<T>, logResponse = true): Promise<Awaited<T> | undefined> {
     try {
