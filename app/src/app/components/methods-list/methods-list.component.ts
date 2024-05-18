@@ -108,7 +108,7 @@ export class MethodsListComponent {
     );
 
     if (response) {
-      const permissionState: Partial<PluginPermissionsMap> = {};
+      const permissionState: PluginPermissionsMap = {};
       permissionState[alias] = response.result;
       this.storeService.updateState({ permissions: permissionState });
     }
@@ -151,18 +151,23 @@ export class MethodsListComponent {
     const permissions = await this.tryCall(async () => CapacitorCalendar.requestFullCalendarAccess());
 
     if (permissions) {
-      this.storeService.updateState({ permissions });
+      this.storeService.updateState({
+        permissions: {
+          readCalendar: permissions.result,
+          writeCalendar: permissions.result,
+        },
+      });
     }
   }
 
   public async requestFullRemindersAccess(): Promise<void> {
-    const response = await this.tryCall(async () => CapacitorCalendar.requestFullRemindersAccess());
+    const permission = await this.tryCall(async () => CapacitorCalendar.requestFullRemindersAccess());
 
-    if (response) {
+    if (permission) {
       this.storeService.updateState({
         permissions: {
-          readReminders: response.result,
-          writeReminders: response.result,
+          readReminders: permission.result,
+          writeReminders: permission.result,
         },
       });
     }

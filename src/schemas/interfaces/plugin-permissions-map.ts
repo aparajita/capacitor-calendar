@@ -1,5 +1,4 @@
 import type { PermissionState } from '@capacitor/core';
+import { PluginPermission } from '../enums/plugin-permission';
 
-export interface PluginPermissionsMap {
-  [permission: string]: PermissionState;
-}
+export type PluginPermissionsMap = Partial<Record<PluginPermission, PermissionState>>;

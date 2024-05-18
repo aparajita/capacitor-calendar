@@ -36,7 +36,7 @@
 ### checkPermission(...)
 
 ```typescript
-checkPermission(options: { alias: PluginPermission; }) => Promise<{ result: PermissionState; }>
+checkPermission(options: { alias: PluginPermission; }) => any
 ```
 
 Checks the current authorization status of a specific permission.
@@ -45,7 +45,7 @@ Checks the current authorization status of a specific permission.
 | ------------- | ------------------------------------------------------------------------- |
 | **`options`** | <code>{ alias: <a href="#pluginpermission">PluginPermission</a>; }</code> |
 
-**Returns:** <code>Promise&lt;{ result: <a href="#permissionstate">PermissionState</a>; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -53,12 +53,12 @@ Checks the current authorization status of a specific permission.
 ### checkAllPermissions()
 
 ```typescript
-checkAllPermissions() => Promise<PluginPermissionsMap>
+checkAllPermissions() => any
 ```
 
 Checks the current authorization status of all the required permissions for the plugin.
 
-**Returns:** <code>Promise&lt;<a href="#pluginpermissionsmap">PluginPermissionsMap</a>&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 6.4.0
 
@@ -68,13 +68,13 @@ Checks the current authorization status of all the required permissions for the 
 ### requestReadOnlyCalendarAccess()
 
 ```typescript
-requestReadOnlyCalendarAccess() => Promise<{ result: Access; }>
+requestReadOnlyCalendarAccess() => any
 ```
 
 [Android only] Requests read-only access to the calendar. If access has
 not already been granted or denied, the user will be prompted to grant it.
 
-**Returns:** <code>Promise&lt;{ result: <a href="#access">Access</a>; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 6.4.0
 
@@ -84,7 +84,7 @@ not already been granted or denied, the user will be prompted to grant it.
 ### requestWriteOnlyCalendarAccess()
 
 ```typescript
-requestWriteOnlyCalendarAccess() => Promise<{ result: Access; }>
+requestWriteOnlyCalendarAccess() => any
 ```
 
 Requests write-only access to the calendar. If access has not already
@@ -92,7 +92,7 @@ been granted or denied, the user will be prompted to grant it.
 
 Note: On iOS &lt; 17, requesting write-only access is the same as read/write.
 
-**Returns:** <code>Promise&lt;{ result: <a href="#access">Access</a>; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 6.4.0
 
@@ -102,13 +102,13 @@ Note: On iOS &lt; 17, requesting write-only access is the same as read/write.
 ### requestFullCalendarAccess()
 
 ```typescript
-requestFullCalendarAccess() => Promise<{ result: Access; }>
+requestFullCalendarAccess() => any
 ```
 
 Requests read/write access to the calendar. If access has not already
 been granted or denied, the user will be prompted to grant it.
 
-**Returns:** <code>Promise&lt;{ result: <a href="#access">Access</a>; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 6.4.0
 
@@ -118,13 +118,13 @@ been granted or denied, the user will be prompted to grant it.
 ### requestFullRemindersAccess()
 
 ```typescript
-requestFullRemindersAccess() => Promise<{ result: Access; }>
+requestFullRemindersAccess() => any
 ```
 
 [iOS only] Requests read/write access to reminders. If access has not already
 been granted or denied, the user will be prompted to grant it.
 
-**Returns:** <code>Promise&lt;{ result: <a href="#access">Access</a>; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 6.4.0
 
@@ -134,14 +134,14 @@ been granted or denied, the user will be prompted to grant it.
 ### requestAllPermissions()
 
 ```typescript
-requestAllPermissions() => Promise<PluginPermissionsMap>
+requestAllPermissions() => any
 ```
 
 Requests authorization to all required permissions for the plugin.
 If any of the permissions have not yet been granted or denied,
 the user will be prompted to grant them.
 
-**Returns:** <code>Promise&lt;<a href="#pluginpermissionsmap">PluginPermissionsMap</a>&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -149,7 +149,7 @@ the user will be prompted to grant them.
 ### requestPermission(...)
 
 ```typescript
-requestPermission(options: { alias: PluginPermission; }) => Promise<{ result: PermissionState; }>
+requestPermission(options: { alias: PluginPermission; }) => any
 ```
 
 Requests authorization to a specific permission, if not already granted.
@@ -159,7 +159,7 @@ If the permission is already granted, it will directly return the status.
 | ------------- | ------------------------------------------------------------------------- |
 | **`options`** | <code>{ alias: <a href="#pluginpermission">PluginPermission</a>; }</code> |
 
-**Returns:** <code>Promise&lt;{ result: <a href="#permissionstate">PermissionState</a>; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -167,7 +167,7 @@ If the permission is already granted, it will directly return the status.
 ### listCalendars(...)
 
 ```typescript
-listCalendars(options?: { access: CalendarChooserDisplayStyle; } | undefined) => Promise<{ result: Calendar[]; }>
+listCalendars(options?: { access: CalendarChooserDisplayStyle; } | undefined) => any
 ```
 
 Retrieves a list of calendars available on the device.
@@ -176,7 +176,7 @@ Retrieves a list of calendars available on the device.
 | ------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
 | **`options`** | <code>{ access: <a href="#calendarchooserdisplaystyle">CalendarChooserDisplayStyle</a>; }</code> | Options for customizing the display and selection styles of the calendar chooser. |
 
-**Returns:** <code>Promise&lt;{ result: Calendar[]; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -184,12 +184,12 @@ Retrieves a list of calendars available on the device.
 ### getDefaultCalendar()
 
 ```typescript
-getDefaultCalendar() => Promise<{ result: Calendar | null; }>
+getDefaultCalendar() => any
 ```
 
 Retrieves the default calendar on the device.
 
-**Returns:** <code>Promise&lt;{ result: <a href="#calendar">Calendar</a> | null; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -197,7 +197,7 @@ Retrieves the default calendar on the device.
 ### selectCalendarsWithPrompt(...)
 
 ```typescript
-selectCalendarsWithPrompt(options: { displayStyle: CalendarChooserDisplayStyle; selectionStyle: CalendarChooserSelectionStyle; }) => Promise<{ result: Calendar[]; }>
+selectCalendarsWithPrompt(options: { displayStyle: CalendarChooserDisplayStyle; selectionStyle: CalendarChooserSelectionStyle; }) => any
 ```
 
 [iOS only] Presents a prompt to the user to select calendars.
@@ -206,7 +206,7 @@ selectCalendarsWithPrompt(options: { displayStyle: CalendarChooserDisplayStyle; 
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | **`options`** | <code>{ displayStyle: <a href="#calendarchooserdisplaystyle">CalendarChooserDisplayStyle</a>; selectionStyle: <a href="#calendarchooserselectionstyle">CalendarChooserSelectionStyle</a>; }</code> | Options for customizing the display and selection styles of the calendar chooser. |
 
-**Returns:** <code>Promise&lt;{ result: Calendar[]; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 0.2.0
 
@@ -216,7 +216,7 @@ selectCalendarsWithPrompt(options: { displayStyle: CalendarChooserDisplayStyle; 
 ### createCalendar(...)
 
 ```typescript
-createCalendar(options: { title: string; color?: string; }) => Promise<{ result: string; }>
+createCalendar(options: { title: string; color?: string; }) => any
 ```
 
 [iOS only] Creates a calendar.
@@ -225,7 +225,7 @@ createCalendar(options: { title: string; color?: string; }) => Promise<{ result:
 | ------------- | ----------------------------------------------- | -------------------------------- |
 | **`options`** | <code>{ title: string; color?: string; }</code> | Options for creating a calendar. |
 
-**Returns:** <code>Promise&lt;{ result: string; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 5.2.0
 
@@ -235,7 +235,7 @@ createCalendar(options: { title: string; color?: string; }) => Promise<{ result:
 ### deleteCalendar(...)
 
 ```typescript
-deleteCalendar(options: { id: string; }) => Promise<void>
+deleteCalendar(options: { id: string; }) => any
 ```
 
 [iOS only] Deletes a calendar by id.
@@ -243,6 +243,8 @@ deleteCalendar(options: { id: string; }) => Promise<void>
 | Param         | Type                         | Description                      |
 | ------------- | ---------------------------- | -------------------------------- |
 | **`options`** | <code>{ id: string; }</code> | Options for deleting a calendar. |
+
+**Returns:** <code>any</code>
 
 **Since:** 5.2.0
 
@@ -252,7 +254,7 @@ deleteCalendar(options: { id: string; }) => Promise<void>
 ### openCalendar(...)
 
 ```typescript
-openCalendar(options: { date?: number; }) => Promise<void>
+openCalendar(options: { date?: number; }) => any
 ```
 
 Opens the native calendar app, which will suspend your app.
@@ -262,13 +264,15 @@ The calendar will open to today's date if no date is provided.
 | ------------- | ------------------------------- | --------------------------------- |
 | **`options`** | <code>{ date?: number; }</code> | Options for opening the calendar. |
 
+**Returns:** <code>any</code>
+
 --------------------
 
 
 ### createEvent(...)
 
 ```typescript
-createEvent(options: { title: string; calendarId?: string; location?: string; startDate?: number; endDate?: number; isAllDay?: boolean; alertOffsetInMinutes?: number; }) => Promise<{ result: string; }>
+createEvent(options: { title: string; calendarId?: string; location?: string; startDate?: number; endDate?: number; isAllDay?: boolean; alertOffsetInMinutes?: number; }) => any
 ```
 
 Creates an event with the provided options.
@@ -277,7 +281,7 @@ Creates an event with the provided options.
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
 | **`options`** | <code>{ title: string; calendarId?: string; location?: string; startDate?: number; endDate?: number; isAllDay?: boolean; alertOffsetInMinutes?: number; }</code> | Options for creating the event. |
 
-**Returns:** <code>Promise&lt;{ result: string; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -285,7 +289,7 @@ Creates an event with the provided options.
 ### createEventWithPrompt(...)
 
 ```typescript
-createEventWithPrompt(options: { title: string; calendarId?: string; location?: string; startDate?: number; endDate?: number; isAllDay?: boolean; alertOffsetInMinutes?: number; }) => Promise<{ result: string[]; }>
+createEventWithPrompt(options: { title: string; calendarId?: string; location?: string; startDate?: number; endDate?: number; isAllDay?: boolean; alertOffsetInMinutes?: number; }) => any
 ```
 
 Creates an event in the calendar by using the native calendar.
@@ -295,7 +299,7 @@ On iOS opens a native sheet and on Android opens an intent.
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
 | **`options`** | <code>{ title: string; calendarId?: string; location?: string; startDate?: number; endDate?: number; isAllDay?: boolean; alertOffsetInMinutes?: number; }</code> | Options for creating the event. |
 
-**Returns:** <code>Promise&lt;{ result: string[]; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 0.1.0
 
@@ -305,7 +309,7 @@ On iOS opens a native sheet and on Android opens an intent.
 ### listEventsInRange(...)
 
 ```typescript
-listEventsInRange(options: { startDate: number; endDate: number; }) => Promise<{ result: CalendarEvent[]; }>
+listEventsInRange(options: { startDate: number; endDate: number; }) => any
 ```
 
 Retrieves a list of calendar events present in the given date range.
@@ -314,7 +318,7 @@ Retrieves a list of calendar events present in the given date range.
 | ------------- | ---------------------------------------------------- | ------------------------------------ |
 | **`options`** | <code>{ startDate: number; endDate: number; }</code> | Options for defining the date range. |
 
-**Returns:** <code>Promise&lt;{ result: CalendarEvent[]; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 0.10.0
 
@@ -324,16 +328,16 @@ Retrieves a list of calendar events present in the given date range.
 ### deleteEventsById(...)
 
 ```typescript
-deleteEventsById(options: { ids: string[]; }) => Promise<{ result: { deleted: string[]; failed: string[]; }; }>
+deleteEventsById(options: { ids: string[]; }) => any
 ```
 
 Deletes events from the calendar given their IDs.
 
-| Param         | Type                            | Description                     |
-| ------------- | ------------------------------- | ------------------------------- |
-| **`options`** | <code>{ ids: string[]; }</code> | Options for defining event IDs. |
+| Param         | Type                      | Description                     |
+| ------------- | ------------------------- | ------------------------------- |
+| **`options`** | <code>{ ids: {}; }</code> | Options for defining event IDs. |
 
-**Returns:** <code>Promise&lt;{ result: { deleted: string[]; failed: string[]; }; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 0.11.0
 
@@ -343,7 +347,7 @@ Deletes events from the calendar given their IDs.
 ### createReminder(...)
 
 ```typescript
-createReminder(options: { title: string; listId?: string; priority?: number; isCompleted?: boolean; startDate?: number; dueDate?: number; completionDate?: number; notes?: string; url?: string; location?: string; recurrence?: ReminderRecurrenceRule; }) => Promise<{ result: string; }>
+createReminder(options: { title: string; listId?: string; priority?: number; isCompleted?: boolean; startDate?: number; dueDate?: number; completionDate?: number; notes?: string; url?: string; location?: string; recurrence?: ReminderRecurrenceRule; }) => any
 ```
 
 [iOS only] Creates a reminder with the provided options.
@@ -352,7 +356,7 @@ createReminder(options: { title: string; listId?: string; priority?: number; isC
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | **`options`** | <code>{ title: string; listId?: string; priority?: number; isCompleted?: boolean; startDate?: number; dueDate?: number; completionDate?: number; notes?: string; url?: string; location?: string; recurrence?: <a href="#reminderrecurrencerule">ReminderRecurrenceRule</a>; }</code> | Options for creating the reminder. |
 
-**Returns:** <code>Promise&lt;{ result: string; }&gt;</code>
+**Returns:** <code>any</code>
 
 **Since:** 0.5.0
 
@@ -362,12 +366,12 @@ createReminder(options: { title: string; listId?: string; priority?: number; isC
 ### getDefaultRemindersList()
 
 ```typescript
-getDefaultRemindersList() => Promise<{ result: RemindersList; }>
+getDefaultRemindersList() => any
 ```
 
 [iOS only] Retrieves the default reminders list on the device.
 
-**Returns:** <code>Promise&lt;{ result: <a href="#reminderslist">RemindersList</a>; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -375,12 +379,12 @@ getDefaultRemindersList() => Promise<{ result: RemindersList; }>
 ### getRemindersLists()
 
 ```typescript
-getRemindersLists() => Promise<{ result: RemindersList[]; }>
+getRemindersLists() => any
 ```
 
 [iOS only] Retrieves all available reminders lists on the device.
 
-**Returns:** <code>Promise&lt;{ result: RemindersList[]; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -388,19 +392,18 @@ getRemindersLists() => Promise<{ result: RemindersList[]; }>
 ### openReminders()
 
 ```typescript
-openReminders() => Promise<void>
+openReminders() => any
 ```
 
 [iOS only] Opens the native calendar app, which will suspend your app.
 The calendar will open to today's date if no date is provided.
 
+**Returns:** <code>any</code>
+
 --------------------
 
 
 ### Interfaces
-
-
-#### PluginPermissionsMap
 
 
 #### Calendar
@@ -453,6 +456,11 @@ Represents an event in the calendar.
 #### PermissionState
 
 <code>'prompt' | 'prompt-with-rationale' | 'granted' | 'denied'</code>
+
+
+#### PluginPermissionsMap
+
+<code>Partial&lt;Record&lt;<a href="#pluginpermission">PluginPermission</a>, <a href="#permissionstate">PermissionState</a>&gt;&gt;</code>
 
 
 #### Access
